@@ -149,6 +149,18 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 .result .stars { font-size: 40px; color: var(--shirt); letter-spacing: 6px; }
 .result .stars .off { color: rgba(251,243,228,0.2); }
 .center { justify-content: center; }
+.opt { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; }
+.opt .modeinfo { font-weight: 600; }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.sw { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(251,243,228,0.18); padding: 0; }
+.sw[aria-pressed="true"] { border-color: var(--shirt); box-shadow: 0 0 0 2px var(--night) inset; }
+.sw.kit { border-radius: 10px; width: 52px; }
+#custom { background: #14102a; }
+.custom-wrap { display: grid; grid-template-columns: 150px 1fr; gap: 16px; align-items: center; }
+#lookPreview { width: 150px; height: 190px; background: rgba(251,243,228,0.06); border-radius: 14px; }
+@media (max-height: 420px) { .custom-wrap { grid-template-columns: 110px 1fr; } #lookPreview { width: 110px; height: 150px; } }
+.power-meter { width: min(36vw, 280px); height: 22px; border-radius: 11px; background: rgba(251,243,228,0.12); overflow: hidden; }
+.power-meter i { display: block; height: 100%; width: 60%; background: linear-gradient(90deg, #5fd38a, var(--aim) 60%, #ef5b4c); }
 #rotate { z-index: 50; text-align: center; font-size: 22px; }
 #rotate svg { width: 70px; height: 70px; stroke: var(--shirt); fill: none; stroke-width: 2.2; margin: 0 auto 10px; display: block; }
 @media (prefers-reduced-motion: reduce) { .toast, .intro { transition: none; } }
@@ -182,6 +194,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   <div class="power">
     <label for="power">Força <output id="powerOut">60%</output></label>
     <input type="range" id="power" min="10" max="100" value="60">
+    <div class="power-meter" id="powerMeter" hidden><i id="powerFill"></i></div>
   </div>
   <button class="btn primary" id="bShoot">Chutar!</button>
 </div>
@@ -198,10 +211,21 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       </div>
     </div>
     <div class="modeinfo" id="modeInfo"></div>
-    <div class="row"><span class="modeinfo">Personagem</span><div class="seg" id="charSeg" role="group" aria-label="Personagem"><button id="cNew" aria-pressed="true">Novo</button><button id="cOld" aria-pressed="false">Original</button></div></div>
+    <div class="row"><span class="modeinfo">Personagem</span><div class="seg" id="charSeg" role="group" aria-label="Personagem"><button id="cNew" aria-pressed="true">Novo</button><button id="cOld" aria-pressed="false">Original</button></div><button class="btn gold" id="bLook" style="padding:8px 14px;font-size:16px">Personalizar</button><span class="modeinfo">Força</span><div class="seg" id="powSeg" role="group" aria-label="Controle da força"><button id="pBar" aria-pressed="true">Barra</button><button id="pHold" aria-pressed="false">Segurar</button></div></div>
+    <div class="modeinfo" id="powInfo" hidden></div>
     <div class="seg worlds" id="worldSeg" role="group" aria-label="Mundo"></div>
     <div class="levels" id="levelList"></div>
     <div class="row"><button class="btn" id="bFull">Tela cheia</button><span class="modeinfo" id="fullTip" hidden>No iPhone, a tela cheia vem pelo atalho: toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>. Abra o jogo pelo ícone novo.</span></div>
+  </div>
+</div>
+
+<div class="overlay" id="custom" hidden>
+  <div class="card">
+    <div class="head"><div class="logo" style="font-size:clamp(28px,5vw,44px)">Seu jogador</div><div class="row"><button class="btn" id="bLookReset">Padrão</button><button class="btn primary" id="bLookOk">Pronto</button></div></div>
+    <div class="custom-wrap">
+      <canvas id="lookPreview"></canvas>
+      <div style="display:grid;gap:10px" id="lookOpts"></div>
+    </div>
   </div>
 </div>
 
@@ -509,7 +533,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 
   // ---------- DOM / tela ----------
   const $ = id => document.getElementById(id);
-  const cv = $("game"), ctx = cv.getContext("2d");
+  const cv = $("game"); let ctx = cv.getContext("2d");
   let W = 0, H = 0, DPR = 1, S = 40, viewW = 20;
   let skyCv, farCv, vigCv, levelCv, TS = 40, builtTheme = "";
 
@@ -666,7 +690,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     if (k === "arrowleft" || k === "a") keys.left = true;
     if (k === "arrowright" || k === "d") keys.right = true;
     if (k === "arrowup" || k === "w" || k === " ") { keys.jump = true; jumpPressed = true; e.preventDefault(); }
-    if (k === "k" || k === "enter") { if (mode === "aim") shoot(); else startAim(); }
+    if (k === "k" || k === "enter") { if (mode === "aim") { if (powerCtl === "hold") startCharge(); else shoot(); } else startAim(); }
     if (k === "escape" && mode === "aim") cancelAim();
     if (k === "r" && mode === "play") startLevel(worldIdx, levelIdx);
     dismissIntro();
@@ -676,6 +700,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     if (k === "arrowleft" || k === "a") keys.left = false;
     if (k === "arrowright" || k === "d") keys.right = false;
     if (k === "arrowup" || k === "w" || k === " ") keys.jump = false;
+    if ((k === "k" || k === "enter") && powerCtl === "hold") releaseCharge();
   });
 
   // ---------- Mira (força + curva) ----------
@@ -698,16 +723,34 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     aim = { p0, p2, h: { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 - 2.5 }, power: +$("power").value / 100, drag: null, camX };
     mode = "aim"; showAim(true); haptic(10);
   }
-  function cancelAim() { aim = null; mode = "play"; showAim(false); }
+  function cancelAim() { charging = false; aim = null; mode = "play"; showAim(false); }
   function showAim(on) {
     $("aimBar").hidden = !on; $("aimHint").hidden = !on;
+    const hold = powerCtl === "hold";
+    $("power").hidden = hold; $("powerMeter").hidden = !hold; $("bShoot").textContent = hold ? "Segure!" : "Chutar!";
+    if (on && hold) setPowerUI(0.1);
     $("padLeft").hidden = on; $("padRight").hidden = on;
     keys.left = keys.right = keys.jump = false;
     document.querySelectorAll(".ctl").forEach(b => b.classList.remove("on"));
   }
+  // força: "bar" (padrão, barra deslizante) ou "hold" (segura Chutar/Enter, solta para chutar)
+  let powerCtl = "bar", charging = false, chargeDir = 1;
+  try { powerCtl = localStorage.getItem("brazuca-power") === "hold" ? "hold" : "bar"; } catch (e) {}
+  function setPowerUI(v) { $("power").value = Math.round(v * 100); $("powerOut").textContent = Math.round(v * 100) + "%"; $("powerFill").style.width = Math.round(v * 100) + "%"; }
+  function startCharge() { if (mode !== "aim" || charging) return; charging = true; chargeDir = 1; aim.power = 0.1; setPowerUI(0.1); haptic(10); }
+  function updateCharge(dt) {
+    if (!charging || !aim) return;
+    aim.power += chargeDir * dt * 0.8;
+    if (aim.power >= 1) { aim.power = 1; chargeDir = -1; } else if (aim.power <= 0.1) { aim.power = 0.1; chargeDir = 1; }
+    setPowerUI(aim.power);
+  }
+  function releaseCharge() { if (!charging) return; charging = false; shoot(); }
   $("power").addEventListener("input", e => { if (aim) aim.power = +e.target.value / 100; $("powerOut").textContent = e.target.value + "%"; });
   $("bCancel").addEventListener("click", cancelAim);
-  $("bShoot").addEventListener("click", () => shoot());
+  $("bShoot").addEventListener("click", () => { if (powerCtl === "bar") shoot(); });
+  $("bShoot").addEventListener("pointerdown", e => { if (powerCtl !== "hold") return; e.preventDefault(); $("bShoot").setPointerCapture(e.pointerId); startCharge(); });
+  $("bShoot").addEventListener("pointerup", () => { if (powerCtl === "hold") releaseCharge(); });
+  $("bShoot").addEventListener("pointercancel", () => { charging = false; });
 
   // Curva quadrática: o ponto azul fica sobre a curva (t=0.5); o controle real é derivado dele.
   function ctrlPoint(a) { return { x: 2 * a.h.x - (a.p0.x + a.p2.x) / 2, y: 2 * a.h.y - (a.p0.y + a.p2.y) / 2 }; }
@@ -1359,6 +1402,24 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     const f = 1 + k; return `rgb(${clamp(Math.round(r * f), 0, 255)},${clamp(Math.round(g * f), 0, 255)},${clamp(Math.round(b * f), 0, 255)})`;
   }
   function kitOf(k) { k.back = {}; for (const key of ["skin", "shirt", "sleeve", "shorts", "sock", "shoe", "glove"]) if (k[key]) k.back[key] = shade(k[key], -0.3); return k; }
+  // ---------- Personalização do jogador (o padrão é o visual original) ----------
+  const LOOK_OPTS = {
+    skin: { label: "Pele", items: ["#f1c7a1", "#e0ac80", "#b97a52", "#8d5a3b", "#5e3a24"] },
+    style: { label: "Cabelo", items: ["curly", "short", "mohawk", "bald"], names: { curly: "Cacheado", short: "Curto", mohawk: "Moicano", bald: "Careca" } },
+    hair: { label: "Cor do cabelo", items: ["#15100e", "#5a3420", "#c98a3c", "#e8cf7a", "#b8432a"] },
+    band: { label: "Faixa", items: ["#1f9d55", "#f7d117", "#c8242b", "#fbf3e4", ""] },
+    kit: { label: "Uniforme", items: ["brasil", "azul", "branco", "verde", "rosa"] },
+  };
+  const KITS = {
+    brasil: { shirt: "#f7d117", trim: "#1f9d55", shorts: "#1d4fbf", sock: "#f4f1ea" },
+    azul: { shirt: "#1d4fbf", trim: "#f7d117", shorts: "#f4f1ea", sock: "#1d4fbf" },
+    branco: { shirt: "#f4f1ea", trim: "#1d4fbf", shorts: "#1d4fbf", sock: "#f4f1ea" },
+    verde: { shirt: "#1f9d55", trim: "#f7d117", shorts: "#f4f1ea", sock: "#1f9d55" },
+    rosa: { shirt: "#ff6fa8", trim: "#1d1838", shorts: "#1d1838", sock: "#ff6fa8" },
+  };
+  const LOOK_DEFAULT = { skin: "#8d5a3b", style: "curly", hair: "#15100e", band: "#1f9d55", kit: "brasil" };
+  let look = { ...LOOK_DEFAULT };
+  try { look = { ...LOOK_DEFAULT, ...JSON.parse(localStorage.getItem("brazuca-look") || "{}") }; } catch (e) {}
   const KIT_PLAYER = kitOf({ shirt: "#f7d117", sleeve: "#f7d117", trim: "#1f9d55", shorts: "#1d4fbf", sock: "#f4f1ea", shoe: "#16161a", skin: "#8d5a3b", hair: "#15100e", band: "#1f9d55", lip: "#6e4128", style: "curly" });
   const KIT_DEF = kitOf({ shirt: "#fbf3e4", stripes: "#c8242b", sleeve: "#c8242b", trim: "#c8242b", shorts: "#16161a", sock: "#c8242b", shoe: "#16161a", skin: "#e0ac80", hair: "#5a3420", lip: "#b97a5a", style: "short" });
   const KIT_GK = kitOf({ shirt: "#2b2b30", sleeve: "#2b2b30", trim: "#ff7a1a", shorts: "#2b2b30", sock: "#ff7a1a", shoe: "#16161a", skin: "#6b4228", hair: "#120c0a", glove: "#ff7a1a", lip: "#4f2e1c", style: "bald", longSleeve: true });
@@ -1450,13 +1511,17 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     ctx.fillStyle = kit.hair;
     if (kit.style === "curly") {
       for (const [hx, hy, hr] of [[-0.5, -0.75, 0.48], [0, -0.95, 0.5], [0.5, -0.82, 0.42], [-0.85, -0.25, 0.42], [-0.75, 0.25, 0.32], [0.2, -0.6, 0.45], [-0.3, -0.45, 0.5]]) { ctx.beginPath(); ctx.arc(hx * r, hy * r, hr * r, 0, 7); ctx.fill(); }
-      ctx.fillStyle = kit.band; ctx.beginPath(); ctx.moveTo(-r * 0.95, -r * 0.35); ctx.quadraticCurveTo(0, -r * 0.75, r * 0.95, -r * 0.42); ctx.lineTo(r * 0.92, -r * 0.62); ctx.quadraticCurveTo(0, -r * 0.98, -r * 0.92, -r * 0.6); ctx.fill();
     } else if (kit.style === "short") {
       ctx.beginPath(); ctx.ellipse(-r * 0.12, -r * 0.45, r * 0.95, r * 0.62, -0.15, Math.PI, Math.PI * 2.05); ctx.fill();
       ctx.beginPath(); ctx.ellipse(-r * 0.6, -r * 0.1, r * 0.4, r * 0.5, 0, 0, 7); ctx.fill();
+    } else if (kit.style === "mohawk") {
+      ctx.beginPath(); ctx.ellipse(-r * 0.1, -r * 0.75, r * 0.75, r * 0.42, -0.1, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+      for (let i = 0; i < 5; i++) { const a = -2.6 + i * 0.32; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.85); ctx.lineTo(Math.cos(a + 0.1) * r * 1.45, Math.sin(a + 0.1) * r * 1.45); ctx.lineTo(Math.cos(a + 0.32) * r * 0.75, Math.sin(a + 0.32) * r * 0.85); ctx.fill(); }
+      ctx.fillStyle = shade(kit.skin, -0.12); ctx.beginPath(); ctx.ellipse(-r * 0.55, -r * 0.05, r * 0.38, r * 0.5, 0, 0, 7); ctx.fill();
     } else {
       ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.beginPath(); ctx.ellipse(-r * 0.1, -r * 0.6, r * 0.5, r * 0.25, -0.3, 0, 7); ctx.fill();
     }
+    if (kit.band) { ctx.fillStyle = kit.band; ctx.beginPath(); ctx.moveTo(-r * 0.95, -r * 0.35); ctx.quadraticCurveTo(0, -r * 0.75, r * 0.95, -r * 0.42); ctx.lineTo(r * 0.92, -r * 0.62); ctx.quadraticCurveTo(0, -r * 0.98, -r * 0.92, -r * 0.6); ctx.fill(); }
     ctx.restore();
   }
 
@@ -1504,6 +1569,13 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     arm(P.shF, P.elF);
   }
   const KITC_PLAYER = { shirt: "#f7d117", sleeve: "#f7d117", trim: "#1f9d55", shorts: "#1d4fbf", sock: "#f4f1ea", shoe: "#16161a", skin: "#8d5a3b", hair: "#1a1210", num: "10" };
+  function applyLook() {
+    const k = KITS[look.kit] || KITS.brasil;
+    Object.assign(KIT_PLAYER, k, { sleeve: k.shirt, skin: look.skin, hair: look.hair, style: look.style, band: look.band, lip: look.skin === LOOK_DEFAULT.skin ? "#6e4128" : shade(look.skin, -0.25) });
+    kitOf(KIT_PLAYER);
+    Object.assign(KITC_PLAYER, k, { sleeve: k.shirt, skin: look.skin, hair: look.style === "bald" ? look.skin : look.hair });
+  }
+  applyLook();
   const KITC_DEF = { shirt: "#fbf3e4", stripes: "#c8242b", sleeve: "#c8242b", trim: "#c8242b", shorts: "#16161a", sock: "#c8242b", shoe: "#16161a", skin: "#e0ac80", hair: "#5a3420" };
   const KITC_GK = { shirt: "#2b2b30", sleeve: "#ff7a1a", trim: "#ff7a1a", shorts: "#2b2b30", sock: "#ff7a1a", shoe: "#16161a", skin: "#6b4228", hair: "#120c0a", glove: "#ff7a1a", num: "1" };
 
@@ -1753,6 +1825,8 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   function renderMenu() {
     $("mNormal").setAttribute("aria-pressed", gameMode === "normal"); $("mKids").setAttribute("aria-pressed", gameMode === "kids");
     $("modeInfo").textContent = MODE().info;
+    $("pBar").setAttribute("aria-pressed", powerCtl === "bar"); $("pHold").setAttribute("aria-pressed", powerCtl === "hold");
+    $("powInfo").textContent = "Força: segure Chutar (ou Enter), a barra sobe e desce. Solte na hora certa."; $("powInfo").hidden = powerCtl !== "hold";
     $("cNew").setAttribute("aria-pressed", charStyle === "new"); $("cOld").setAttribute("aria-pressed", charStyle === "classic");
     $("worldSeg").innerHTML = WORLDS.map((w, i) => `<button data-w="${i}" aria-pressed="${i === menuWorld}">Mundo ${i + 1} · ${w.name}</button>`).join("");
     document.querySelectorAll("#worldSeg button").forEach(b => b.addEventListener("click", () => { menuWorld = +b.dataset.w; renderMenu(); }));
@@ -1769,6 +1843,35 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   function setChar(c) { charStyle = c; try { localStorage.setItem("brazuca-char", c); } catch (e) {} renderMenu(); }
   $("cNew").addEventListener("click", () => setChar("new"));
   $("cOld").addEventListener("click", () => setChar("classic"));
+  function setPowerCtl(v) { powerCtl = v; try { localStorage.setItem("brazuca-power", v); } catch (e) {} renderMenu(); }
+  $("pBar").addEventListener("click", () => setPowerCtl("bar"));
+  $("pHold").addEventListener("click", () => setPowerCtl("hold"));
+
+  // tela de personalização
+  function renderLook() {
+    $("lookOpts").innerHTML = Object.entries(LOOK_OPTS).map(([key, o]) => `<div class="opt"><span class="modeinfo">${o.label}</span><div class="${key === "style" ? "seg" : "swatches"}">` +
+      o.items.map(v => key === "style" ? `<button data-k="${key}" data-v="${v}" aria-pressed="${look[key] === v}">${o.names[v]}</button>`
+        : key === "kit" ? `<button class="sw kit" data-k="${key}" data-v="${v}" aria-pressed="${look[key] === v}" aria-label="${v}" style="background:linear-gradient(${KITS[v].shirt} 0 55%, ${KITS[v].shorts} 55%)"></button>`
+        : `<button class="sw" data-k="${key}" data-v="${v}" aria-pressed="${look[key] === v}" aria-label="${v || "nenhuma"}" style="background:${v || "repeating-linear-gradient(45deg,#3a3270 0 6px,#1d1838 6px 12px)"}"></button>`).join("") + `</div></div>`).join("");
+    document.querySelectorAll("#lookOpts button").forEach(b => b.addEventListener("click", () => { look[b.dataset.k] = b.dataset.v; saveLook(); renderLook(); }));
+  }
+  function saveLook() { applyLook(); try { localStorage.setItem("brazuca-look", JSON.stringify(look)); } catch (e) {} }
+  let lookPose = {};
+  function drawLookPreview() {
+    if ($("custom").hidden) return;
+    const c = $("lookPreview"), r = c.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+    if (c.width !== Math.round(r.width * d)) { c.width = Math.round(r.width * d); c.height = Math.round(r.height * d); }
+    const saved = ctx; ctx = c.getContext("2d");
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height);
+    const s = c.height / 76, X = c.width / 2, Y = c.height * 0.93;
+    ctx.fillStyle = "rgba(10,5,25,0.35)"; ctx.beginPath(); ctx.ellipse(X, Y, 12 * s, 2.5 * s, 0, 0, 7); ctx.fill();
+    if (charStyle === "classic") drawGuyC(X, Y, s, 1, { hipF: 0.1, kneeF: 0.12, hipB: -0.1, kneeB: 0.12, shF: 0.15, elF: 0.4, shB: -0.15, elB: 0.4, lean: 0.03, bob: 0 }, KITC_PLAYER);
+    else drawHumanoid(X, Y, s, 1, blendPose(lookPose, poseIdle(time, 0), 1), KIT_PLAYER, true);
+    ctx = saved;
+  }
+  $("bLook").addEventListener("click", () => { renderLook(); $("custom").hidden = false; });
+  $("bLookOk").addEventListener("click", () => { $("custom").hidden = true; });
+  $("bLookReset").addEventListener("click", () => { look = { ...LOOK_DEFAULT }; saveLook(); renderLook(); });
   function startLevel(w, i) { loadLevel(w, i); $("menu").hidden = true; $("win").hidden = true; mode = "play"; showIntro(); }
   function showWin() {
     const n = starsFor(kicks, L.par), key = bestKey(worldIdx, levelIdx);
@@ -1805,6 +1908,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     if (slow < 1) slow = Math.min(1, slow + realDt * 0.6);
     const dt = realDt * slow;
     shake = Math.max(0, shake - realDt);
+    if (mode === "aim") updateCharge(realDt);
     if (mode === "play" || mode === "won") {
       acc += dt;
       while (acc >= 1 / 60) {
@@ -1818,7 +1922,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     if (toastTimer > 0) { toastTimer -= realDt; if (toastTimer <= 0) $("toast").style.opacity = 0; }
     if (introTimer > 0) { introTimer -= realDt; if (introTimer <= 0) $("intro").style.opacity = 0; }
     const kb = $("bKick"); const ok = mode === "play" && canKick(); if (kb.disabled === ok) kb.disabled = !ok;
-    draw();
+    draw(); drawLookPreview();
     requestAnimationFrame(frame);
   }
   window.addEventListener("resize", resize);
