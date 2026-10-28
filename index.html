@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} body{margin:0} [hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Brazuca</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: canvas de jogo em tela cheia, HUD flutuante nos cantos respeitando safe-area. Visual único: várzea ao entardecer. */
+:root {
+  --night: #1d1838;
+  --shirt: #f7d117;
+  --pitch: #1f9d55;
+  --brick: #c25f37;
+  --ink: #fbf3e4;
+  --ink-dim: #c9bfd6;
+  --aim: #ffd23f;
+  --spin: #5fd3f3;
+  --panel: rgba(24, 18, 44, 0.78);
+  --display: "Bowlby One SC", "Arial Black", Impact, sans-serif;
+  --ui: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  background: var(--night); color: var(--ink); font-family: var(--ui);
+  overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+}
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+button { font-family: var(--ui); color: var(--ink); cursor: pointer; touch-action: none; }
+button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
+
+.hud-top {
+  position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 10px;
+  padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+.chip {
+  background: var(--panel); border-radius: 10px; padding: 6px 12px; font-size: 18px; font-weight: 600;
+  letter-spacing: 0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; backdrop-filter: blur(4px);
+}
+.chip b { font-family: var(--display); font-weight: 400; color: var(--shirt); letter-spacing: 0.04em; }
+.hud-top .spacer { flex: 1; }
+.icon-btn {
+  pointer-events: auto; width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--panel);
+  display: grid; place-items: center;
+}
+.icon-btn svg { width: 22px; height: 22px; stroke: var(--ink); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+.pad {
+  position: fixed; bottom: 0; display: flex; gap: 14px; align-items: flex-end;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.pad.left { left: 0; padding-left: max(18px, calc(env(safe-area-inset-left, 0px) + 8px)); }
+.pad.right { right: 0; padding-right: max(18px, calc(env(safe-area-inset-right, 0px) + 8px)); }
+.ctl {
+  width: 74px; height: 74px; border-radius: 50%; border: 2px solid rgba(251,243,228,0.32);
+  background: rgba(24, 18, 44, 0.5); display: grid; place-items: center; font-size: 15px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.ctl svg { width: 30px; height: 30px; stroke: var(--ink); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.ctl.on { background: rgba(247, 209, 23, 0.35); border-color: var(--shirt); }
+.ctl.kick { width: 86px; height: 86px; background: rgba(31, 157, 85, 0.6); border-color: #5fd38a; flex-direction: column; gap: 2px; display: flex; align-items: center; justify-content: center; }
+.ctl.kick[disabled] { opacity: 0.35; }
+.ctl.jump { margin-bottom: 40px; }
+
+.aim-bar {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--panel); border-radius: 16px 16px 0 0; max-width: calc(100% - 32px);
+}
+.power { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.power label { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim); display: flex; justify-content: space-between; gap: 12px; }
+.power label output { color: var(--aim); font-weight: 700; font-variant-numeric: tabular-nums; }
+#power { width: min(36vw, 280px); height: 34px; accent-color: var(--aim); touch-action: none; }
+.btn {
+  border: 0; border-radius: 12px; padding: 12px 18px; font-size: 18px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; background: rgba(251,243,228,0.12);
+}
+.btn.primary { background: var(--pitch); }
+.btn.gold { background: var(--shirt); color: #1b1606; }
+.aim-hint {
+  position: fixed; top: calc(62px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  background: var(--panel); border-radius: 10px; padding: 6px 12px; font-size: 16px; max-width: calc(100% - 32px);
+  text-align: center; pointer-events: none;
+}
+.aim-hint i { font-style: normal; font-weight: 700; }
+.aim-hint .y { color: var(--aim); } .aim-hint .c { color: var(--spin); }
+
+.toast {
+  position: fixed; top: 34%; left: 50%; transform: translate(-50%, -50%); font-family: var(--display);
+  font-size: clamp(26px, 6vw, 54px); color: var(--ink); text-shadow: 0 4px 0 rgba(0,0,0,0.45); pointer-events: none;
+  text-align: center; white-space: nowrap; transition: opacity .25s;
+}
+.intro {
+  position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px)); background: var(--panel); border-radius: 14px; padding: 10px 16px;
+  display: grid; gap: 2px; pointer-events: none; transition: opacity .4s; backdrop-filter: blur(4px);
+}
+.intro .k { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); }
+.intro .n { font-family: var(--display); font-size: 26px; color: var(--shirt); line-height: 1.05; }
+.intro .h { font-size: 17px; line-height: 1.25; }
+
+.overlay {
+  position: fixed; inset: 0; background: rgba(20, 14, 34, 0.9); display: flex; align-items: center; justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  overflow: auto; touch-action: pan-y;
+}
+.card { width: min(760px, 100%); display: grid; gap: 14px; margin: auto; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.logo { font-family: var(--display); font-size: clamp(40px, 8vw, 76px); line-height: 0.9; color: var(--shirt); letter-spacing: 0.02em; text-shadow: 0 5px 0 #13693a; }
+.world { font-size: 15px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
+.world b { color: var(--ink); }
+.levels { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 520px) { .levels { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lvl {
+  display: grid; gap: 2px; text-align: left; border: 0; border-radius: 12px; padding: 8px 10px;
+  background: rgba(251,243,228,0.08); min-width: 0;
+}
+.lvl .n { font-family: var(--display); font-size: 22px; color: var(--shirt); line-height: 1; }
+.lvl .t { font-size: 16px; font-weight: 600; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lvl .stars { color: var(--shirt); letter-spacing: 2px; font-size: 15px; }
+.lvl .stars .off { color: rgba(251,243,228,0.2); }
+.lvl.done { background: rgba(31,157,85,0.22); }
+.how { font-size: 16px; line-height: 1.35; color: var(--ink-dim); display: grid; gap: 4px; }
+.how b { color: var(--ink); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.big { font-family: var(--display); font-size: clamp(48px, 12vw, 104px); color: var(--shirt); line-height: 1; text-shadow: 0 6px 0 #13693a; text-align: center; }
+.result { text-align: center; font-size: 22px; display: grid; gap: 6px; }
+.result .stars { font-size: 40px; color: var(--shirt); letter-spacing: 6px; }
+.result .stars .off { color: rgba(251,243,228,0.2); }
+.center { justify-content: center; }
+#rotate { z-index: 50; text-align: center; font-size: 22px; }
+#rotate svg { width: 70px; height: 70px; stroke: var(--shirt); fill: none; stroke-width: 2.2; margin: 0 auto 10px; display: block; }
+@media (prefers-reduced-motion: reduce) { .toast, .intro { transition: none; } }
+</style>
+
+<canvas id="game"></canvas>
+
+<div class="hud-top" id="hud">
+  <div class="chip"><b id="lvlName">1. Primeiro toque</b></div>
+  <div class="chip">Chutes <span id="kicks">0</span> · par <span id="par">1</span></div>
+  <div class="spacer"></div>
+  <button class="icon-btn" id="btnRestart" aria-label="Reiniciar fase"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/></svg></button>
+  <button class="icon-btn" id="btnMenu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</div>
+
+<div class="pad left" id="padLeft">
+  <button class="ctl" id="bLeft" aria-label="Esquerda"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="ctl" id="bRight" aria-label="Direita"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+</div>
+<div class="pad right" id="padRight">
+  <button class="ctl jump" id="bJump" aria-label="Pular / escalar"><svg viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/><path d="M6 19l6-6 6 6"/></svg></button>
+  <button class="ctl kick" id="bKick" aria-label="Chutar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg><span>Chute</span></button>
+</div>
+
+<div class="intro" id="intro" style="opacity:0"><span class="k" id="introK">Fase 1</span><span class="n" id="introN"></span><span class="h" id="introH"></span></div>
+
+<div class="aim-hint" id="aimHint" hidden>Arraste o <i class="y">ponto amarelo</i> até o alvo e o <i class="c">ponto azul</i> para curvar</div>
+<div class="aim-bar" id="aimBar" hidden>
+  <button class="btn" id="bCancel">Cancelar</button>
+  <div class="power">
+    <label for="power">Força <output id="powerOut">60%</output></label>
+    <input type="range" id="power" min="10" max="100" value="60">
+  </div>
+  <button class="btn primary" id="bShoot">Chutar!</button>
+</div>
+
+<div class="toast" id="toast" style="opacity:0"></div>
+
+<div class="overlay" id="menu">
+  <div class="card">
+    <div class="head">
+      <div class="logo">Brazuca</div>
+      <div class="world">Mundo 1 · <b>Várzea</b></div>
+    </div>
+    <div class="levels" id="levelList"></div>
+    <div class="how">
+      <div><b>◀ ▶</b> anda e domina a bola. <b>Pular</b> contra uma parede de até 2 blocos escala, mas a bola fica no chão.</div>
+      <div><b>Chute</b> pausa o jogo: arraste o alvo, a curva e escolha a força. Menos chutes, mais estrelas.</div>
+    </div>
+    <div class="row"><button class="btn" id="bFull">Tela cheia</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="win" hidden>
+  <div class="card">
+    <div class="big">Gooool!</div>
+    <div class="result">
+      <div class="stars" id="winStars"></div>
+      <div id="winText"></div>
+    </div>
+    <div class="row center">
+      <button class="btn" id="bRetry">Repetir</button>
+      <button class="btn gold" id="bNext">Próxima fase</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="rotate" hidden>
+  <div><svg viewBox="0 0 64 64"><rect x="20" y="8" width="24" height="44" rx="4"/><path d="M8 40a24 24 0 0 0 24 18"/><path d="M28 56l4 2-1 4"/></svg>Gire o celular para jogar na horizontal</div>
+</div>
+
+<script>
+(() => {
+  // ---------- Fases do Mundo 1 ----------
+  // # parede/chão · C tábua podre · ^ vergalhões · D portão · S alvo que abre o portão
+  // T colchão · M andaime móvel · Z zagueiro · K goleiro · G gol · P jogador · B bola
+  const LEVELS = [
+    { name: "Primeiro toque", par: 1, hint: "Encoste na bola para dominá-la. Toque em Chute, leve o ponto amarelo até o gol e solte a bomba.", map: [
+      "############################",
+      "#..........................#",
+      "#..........................#",
+      "#..........................#",
+      "#..........................#",
+      "#..........................#",
+      "#..........................#",
+      "#.........................G#",
+      "#.........................G#",
+      "#.P.B.....................G#",
+      "############################",
+      "############################"] },
+    { name: "O muro", par: 2, hint: "Pule contra o muro para escalar. A bola não sobe com você: chute por cima com curva.", map: [
+      "##############################",
+      "#............................#",
+      "#............................#",
+      "#............................#",
+      "#............................#",
+      "#............................#",
+      "#............................#",
+      "#...........................G#",
+      "#..........##...............G#",
+      "#.P.B......##...............G#",
+      "##############################",
+      "##############################"] },
+    { name: "Vergalhões", par: 2, hint: "Buraco com vergalhões. Pule por cima e passe a bola pelo alto, senão ela cai.", map: [
+      "##################################",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#...............................G#",
+      "#...............................G#",
+      "#.P.B...........................G#",
+      "##########..########..############",
+      "##########^^########^^############"] },
+    { name: "Tábua podre", par: 2, hint: "As tábuas quebram logo depois que você pisa. Atravesse sem parar.", map: [
+      "####################################",
+      "#..................................#",
+      "#..................................#",
+      "#..................................#",
+      "#..................................#",
+      "#..................................#",
+      "#..................................#",
+      "#.................................G#",
+      "#.........####CCCCCC#####.........G#",
+      "#.P.B.....####......#####.........G#",
+      "##############......################",
+      "##############^^^^^^################"] },
+    { name: "O portão", par: 3, hint: "O portão só abre se a bola acertar o alvo pendurado no teto.", map: [
+      "####################################",
+      "#.............#.........D..........#",
+      "#.............#.........D..........#",
+      "#.............S.........D..........#",
+      "#.......................D..........#",
+      "#.......................D..........#",
+      "#.......................D..........#",
+      "#.......................D.........G#",
+      "#.......................D.........G#",
+      "#.P.B...................D.........G#",
+      "###########..#######################",
+      "###########^^#######################"] },
+    { name: "Colchão velho", par: 2, hint: "A laje é alta demais para escalar. Pule no colchão para subir, e mande a bola antes.", map: [
+      "##########################################",
+      "#........................................#",
+      "#........................................#",
+      "#.......................................G#",
+      "#.......................................G#",
+      "#.......................................G#",
+      "#...................######################",
+      "#...................######################",
+      "#...................######################",
+      "#.P.B.............TT######################",
+      "##########################################",
+      "##########################################"] },
+    { name: "Zagueiro", par: 2, hint: "O zagueiro rouba a bola de quem passa driblando. Encobre ele e corra.", map: [
+      "##################################",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#................................#",
+      "#...............................G#",
+      "#...............................G#",
+      "#.P.B..........Z................G#",
+      "##################################",
+      "##################################"] },
+    { name: "Andaime", par: 2, hint: "Suba no andaime e atravesse com a bola dominada. Depois, cuidado com o muro.", map: [
+      "########################################",
+      "#......................................#",
+      "#......................................#",
+      "#......................................#",
+      "#......................................#",
+      "#......................................#",
+      "#......................................#",
+      "#.....................................G#",
+      "#.........................##..........G#",
+      "#.P.B.....................##..........G#",
+      "###########MMM.....#####################",
+      "###########^^^^^^^^#####################"] },
+    { name: "O goleiro", par: 3, hint: "Suba a laje, atravesse a tábua e espere o goleiro abrir espaço.", map: [
+      "########################################",
+      "#......................................#",
+      "#......................................#",
+      "#......................................#",
+      "#....................................GG#",
+      "#..................................K.GG#",
+      "#....................................GG#",
+      "#...............................########",
+      "#.............####CCCC######...........#",
+      "#.P.B.........####....######...........#",
+      "##################....##################",
+      "##################^^^^##################"] },
+    { name: "Final da várzea", par: 4, hint: "Tudo junto: vergalhão, zagueiro, portão, tábua podre e goleiro. Boa sorte.", map: [
+      "##############################################",
+      "#.....................#.......D..............#",
+      "#.....................#.......D..............#",
+      "#.....................S.......D..............#",
+      "#.............................D..............#",
+      "#.............................D..............#",
+      "#.............................D..............#",
+      "#.............................D...........K.G#",
+      "#.............................D.............G#",
+      "#.P.B............Z............D.............G#",
+      "#########..######################CCCC#########",
+      "#########^^######################^^^^#########"] },
+  ];
+
+  // ---------- Constantes (em blocos) ----------
+  const ROWS = 12, VIEW_ROWS = 13.4, G_PLAYER = 40, RUN = 5, JUMP_V = 10.5, MAX_FALL = 4.6, BOUNCE_V = 17;
+  const G_BALL = 22, BALL_R = 0.24, FLIGHT_SPEED = 16, MAX_REACH = 18;
+
+  // ---------- DOM / tela ----------
+  const $ = id => document.getElementById(id);
+  const cv = $("game"), ctx = cv.getContext("2d");
+  let W = 0, H = 0, DPR = 1, S = 40, viewW = 20;
+  let skyCv, farCv, vigCv, levelCv, TS = 40;
+
+  function mkCanvas(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    S = H / VIEW_ROWS; viewW = W / S;
+    $("rotate").hidden = !(H > W && W < 700);
+    buildSky(); buildFar(); buildVignette();
+    if (grid) buildLevelCanvas();
+  }
+
+  const haptic = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+  let toastTimer = 0, introTimer = 0;
+  function toast(msg, t = 1.4) { const el = $("toast"); el.textContent = msg; el.style.opacity = 1; toastTimer = t; }
+
+  // ---------- Progresso ----------
+  let best = {};
+  try { best = JSON.parse(localStorage.getItem("brazuca-m1-best") || "{}"); } catch (e) {}
+  const saveBest = () => { try { localStorage.setItem("brazuca-m1-best", JSON.stringify(best)); } catch (e) {} };
+  const starsFor = (k, par) => k <= par ? 3 : k === par + 1 ? 2 : 1;
+  const starHtml = n => [0, 1, 2].map(i => `<span class="${i < n ? "" : "off"}">★</span>`).join("");
+
+  // ---------- Estado ----------
+  let L, grid = null, cols, levelIdx = 0, player, ball, keeper, defenders, platforms, goal, gate, crumbles, kicks, camX = 0, mode = "menu";
+  let aim = null, lastKick = null, particles = [], trail = [], time = 0, shake = 0, slow = 1, netBulge = 0;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function loadLevel(i) {
+    levelIdx = i; L = LEVELS[i];
+    grid = L.map.map(r => r.split("")); cols = grid[0].length;
+    crumbles = {}; gate = { open: false, t: 0 }; keeper = null; defenders = []; platforms = []; particles = []; trail = [];
+    let gx0 = 1e9, gy0 = 1e9, gx1 = -1, gy1 = -1, px = 2, py = 10, bx = 4, by = 10;
+    const kSpots = [], zSpots = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < cols; c++) {
+      const ch = grid[r][c];
+      if (ch === "P") { px = c + 0.5; py = r + 1; grid[r][c] = "."; }
+      if (ch === "B") { bx = c + 0.5; by = r + 1 - BALL_R; grid[r][c] = "."; }
+      if (ch === "K") { kSpots.push([c, r]); grid[r][c] = "."; }
+      if (ch === "Z") { zSpots.push([c, r]); grid[r][c] = "."; }
+      if (ch === "G") { gx0 = Math.min(gx0, c); gy0 = Math.min(gy0, r); gx1 = Math.max(gx1, c + 1); gy1 = Math.max(gy1, r + 1); grid[r][c] = "."; }
+      if (ch === "C") crumbles[r + "," + c] = { t: -1, gone: false };
+    }
+    // andaimes: sequências de M numa linha
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < cols; c++) {
+      if (grid[r][c] !== "M") continue;
+      let e = c; while (grid[r][e] === "M") { grid[r][e] = "."; e++; }
+      let lo = c; while (lo > 0 && !solid(lo - 1, r)) lo--;
+      let hi = e; while (hi < cols && !solid(hi, r)) hi++;
+      platforms.push({ x: c, y: r, w: e - c, x0: lo, x1: hi - (e - c), dir: 1, speed: 1.9, dx: 0 });
+    }
+    for (const [c, r] of kSpots) {
+      let fl = r; while (fl < ROWS && !solid(c, fl)) fl++;
+      const lo = r + 0.5 - 1.7, hi = Math.min(r + 0.5 + 1.7, fl - 0.8);
+      keeper = { x: c + 0.5, cy: (lo + hi) / 2, amp: (hi - lo) / 2, y: r + 0.5, w: 0.7, h: 1.6, t: 0, dive: 0 };
+    }
+    for (const [c, r] of zSpots) {
+      let lo = c, hi = c;
+      while (lo > c - 6 && !solid(lo - 1, r) && solid(lo - 1, r + 1)) lo--;
+      while (hi < c + 6 && !solid(hi + 1, r) && solid(hi + 1, r + 1)) hi++;
+      defenders.push({ x: c + 0.5, y: r + 1, x0: lo + 0.4, x1: hi + 0.6, dir: -1, w: 0.6, h: 1.5, anim: 0, busy: 0 });
+    }
+    goal = { x0: gx0, y0: gy0, x1: gx1, y1: gy1 };
+    player = { x: px, y: py, w: 0.6, h: 1.5, vx: 0, vy: 0, onGround: true, facing: 1, state: "normal", fallFrom: py, anim: 0, kickT: 0, climb: null, deadT: 0, land: 0 };
+    ball = { x: bx, y: by, vx: 0, vy: 0, state: "free", rot: 0, grounded: true, noPick: 0, path: null };
+    lastKick = { x: bx, y: by };
+    kicks = 0; aim = null; shake = 0; slow = 1; netBulge = 0;
+    camX = clamp(player.x - viewW / 2, 0, Math.max(0, cols - viewW));
+    $("lvlName").textContent = `${i + 1}. ${L.name}`; $("par").textContent = L.par; updateKicks();
+    showAim(false);
+    buildLevelCanvas();
+  }
+  const updateKicks = () => { $("kicks").textContent = kicks; };
+  function showIntro() {
+    $("introK").textContent = `Fase ${levelIdx + 1} de ${LEVELS.length}`; $("introN").textContent = L.name; $("introH").textContent = L.hint;
+    $("intro").style.opacity = 1; introTimer = 5;
+  }
+
+  // ---------- Mapa ----------
+  function tile(c, r) { if (c < 0 || c >= cols || r < 0) return "#"; if (r >= ROWS) return "."; return grid[r][c]; }
+  function solid(c, r) {
+    const t = tile(c, r);
+    if (t === "#" || t === "S" || t === "s" || t === "T") return true;
+    if (t === "C") return !crumbles[r + "," + c].gone;
+    if (t === "D") return gate.t < 0.6;
+    return false;
+  }
+  function rectSolid(x0, y0, x1, y1) {
+    for (let r = Math.floor(y0); r <= Math.floor(y1 - 1e-6); r++)
+      for (let c = Math.floor(x0); c <= Math.floor(x1 - 1e-6); c++) if (solid(c, r)) return { x0: c, y0: r, x1: c + 1, y1: r + 1, c, r };
+    for (const p of platforms) if (x1 > p.x && x0 < p.x + p.w && y1 > p.y && y0 < p.y + 0.5) return { x0: p.x, y0: p.y, x1: p.x + p.w, y1: p.y + 0.5, plat: p };
+    return null;
+  }
+
+  // ---------- Controles ----------
+  const keys = { left: false, right: false, jump: false };
+  let jumpPressed = false;
+  function hold(id, k) {
+    const el = $(id);
+    const on = e => { e.preventDefault(); keys[k] = true; el.classList.add("on"); if (k === "jump") jumpPressed = true; dismissIntro(); };
+    const off = () => { keys[k] = false; el.classList.remove("on"); };
+    el.addEventListener("pointerdown", on);
+    ["pointerup", "pointercancel", "pointerleave"].forEach(ev => el.addEventListener(ev, off));
+  }
+  hold("bLeft", "left"); hold("bRight", "right"); hold("bJump", "jump");
+  function dismissIntro() { if (introTimer > 1) introTimer = 1; }
+  $("bKick").addEventListener("pointerdown", e => { e.preventDefault(); startAim(); });
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  window.addEventListener("keydown", e => {
+    if (e.repeat) return;
+    const k = e.key.toLowerCase();
+    if (k === "arrowleft" || k === "a") keys.left = true;
+    if (k === "arrowright" || k === "d") keys.right = true;
+    if (k === "arrowup" || k === "w" || k === " ") { keys.jump = true; jumpPressed = true; e.preventDefault(); }
+    if (k === "k" || k === "enter") { if (mode === "aim") shoot(); else startAim(); }
+    if (k === "escape" && mode === "aim") cancelAim();
+    if (k === "r" && mode === "play") startLevel(levelIdx);
+    dismissIntro();
+  });
+  window.addEventListener("keyup", e => {
+    const k = e.key.toLowerCase();
+    if (k === "arrowleft" || k === "a") keys.left = false;
+    if (k === "arrowright" || k === "d") keys.right = false;
+    if (k === "arrowup" || k === "w" || k === " ") keys.jump = false;
+  });
+
+  // ---------- Mira (força + curva) ----------
+  function canKick() {
+    if (player.state !== "normal" || !player.onGround) return false;
+    if (ball.state === "held") return true;
+    return ball.state === "free" && ball.grounded && Math.hypot(ball.vx, ball.vy) < 0.5 && Math.abs(ball.x - player.x) < 1.1 && Math.abs(ball.y - (player.y - BALL_R)) < 0.5;
+  }
+  function startAim() {
+    if (mode !== "play" || !canKick()) return;
+    dismissIntro();
+    ball.state = "held"; placeHeldBall();
+    const p0 = { x: ball.x, y: ball.y };
+    const gc = { x: goal.x0 + 0.6, y: (goal.y0 + goal.y1) / 2 };
+    let p2;
+    const dg = Math.hypot(gc.x - p0.x, gc.y - p0.y);
+    if (dg < 15 && Math.sign(gc.x - p0.x) === player.facing) p2 = gc;
+    else p2 = { x: clamp(p0.x + player.facing * 8, 1, cols - 1), y: p0.y - 0.2 };
+    aim = { p0, p2, h: { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 - 2.5 }, power: +$("power").value / 100, drag: null };
+    aim.camX = clamp((p0.x + p2.x) / 2 - viewW / 2, 0, Math.max(0, cols - viewW));
+    mode = "aim"; showAim(true); haptic(10);
+  }
+  function cancelAim() { aim = null; mode = "play"; showAim(false); }
+  function showAim(on) {
+    $("aimBar").hidden = !on; $("aimHint").hidden = !on;
+    $("padLeft").hidden = on; $("padRight").hidden = on;
+    keys.left = keys.right = keys.jump = false;
+    document.querySelectorAll(".ctl").forEach(b => b.classList.remove("on"));
+  }
+  $("power").addEventListener("input", e => { if (aim) aim.power = +e.target.value / 100; $("powerOut").textContent = e.target.value + "%"; });
+  $("bCancel").addEventListener("click", cancelAim);
+  $("bShoot").addEventListener("click", () => shoot());
+
+  // Curva quadrática: o ponto azul fica sobre a curva (t=0.5); o controle real é derivado dele.
+  function ctrlPoint(a) { return { x: 2 * a.h.x - (a.p0.x + a.p2.x) / 2, y: 2 * a.h.y - (a.p0.y + a.p2.y) / 2 }; }
+  function buildPath(a) {
+    const q = ctrlPoint(a), pts = [], N = 80; let len = 0;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, u = 1 - t;
+      const p = { x: u * u * a.p0.x + 2 * u * t * q.x + t * t * a.p2.x, y: u * u * a.p0.y + 2 * u * t * q.y + t * t * a.p2.y };
+      if (i) len += Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y);
+      p.s = len; pts.push(p);
+    }
+    return { pts, len };
+  }
+  function pathAt(path, s) {
+    const pts = path.pts; s = clamp(s, 0, path.len);
+    let i = 1; while (i < pts.length - 1 && pts[i].s < s) i++;
+    const a = pts[i - 1], b = pts[i], seg = (b.s - a.s) || 1e-6, f = (s - a.s) / seg;
+    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, tx: (b.x - a.x) / seg, ty: (b.y - a.y) / seg };
+  }
+
+  function toWorld(e) { const cx = mode === "aim" ? aim.camX : camX; return { x: cx + e.clientX / S, y: e.clientY / S }; }
+  cv.addEventListener("pointerdown", e => {
+    if (mode !== "aim") return;
+    e.preventDefault();
+    const w = toWorld(e), tol = 44 / S;
+    const dE = Math.hypot(w.x - aim.p2.x, w.y - aim.p2.y), dH = Math.hypot(w.x - aim.h.x, w.y - aim.h.y);
+    if (dH < tol && dH <= dE) aim.drag = "h";
+    else if (dE < tol) aim.drag = "e";
+    else { aim.drag = "e"; moveHandle(w); }
+    cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener("pointermove", e => { if (mode === "aim" && aim.drag) moveHandle(toWorld(e)); });
+  cv.addEventListener("pointerup", () => { if (aim) aim.drag = null; });
+  function moveHandle(w) {
+    w.x = clamp(w.x, 0.3, cols - 0.3); w.y = clamp(w.y, 0.3, ROWS - 0.3);
+    if (aim.drag === "e") {
+      const off = { x: aim.h.x - (aim.p0.x + aim.p2.x) / 2, y: aim.h.y - (aim.p0.y + aim.p2.y) / 2 };
+      aim.p2 = w;
+      aim.h = { x: (aim.p0.x + w.x) / 2 + off.x, y: (aim.p0.y + w.y) / 2 + off.y };
+    } else aim.h = w;
+  }
+
+  function shoot() {
+    if (mode !== "aim") return;
+    const path = buildPath(aim);
+    if (path.len < 0.3) return;
+    const reach = aim.power * MAX_REACH;
+    ball.state = "flight"; ball.path = path; ball.s = 0; ball.reach = Math.min(reach, path.len);
+    ball.excess = Math.max(0, reach - path.len); ball.short = reach < path.len;
+    lastKick = { x: aim.p0.x, y: aim.p0.y };
+    player.facing = aim.p2.x >= aim.p0.x ? 1 : -1; player.kickT = 0.32;
+    kicks++; updateKicks(); haptic(35);
+    dust(ball.x, ball.y + BALL_R, 6);
+    aim = null; mode = "play"; showAim(false);
+  }
+
+  // ---------- Física do jogador ----------
+  function moveRect(e, dx, dy) {
+    let hitX = false, hitY = null;
+    if (dx) {
+      e.x += dx;
+      const h = rectSolid(e.x - e.w / 2, e.y - e.h, e.x + e.w / 2, e.y);
+      if (h) { e.x = dx > 0 ? h.x0 - e.w / 2 - 1e-4 : h.x1 + e.w / 2 + 1e-4; hitX = true; }
+    }
+    if (dy) {
+      e.y += dy;
+      const h = rectSolid(e.x - e.w / 2, e.y - e.h, e.x + e.w / 2, e.y);
+      if (h) { e.y = dy > 0 ? h.y0 - 1e-4 : h.y1 + e.h + 1e-4; hitY = h; }
+    }
+    return { hitX, hitY };
+  }
+
+  function die(msg) {
+    if (player.state === "dead") return;
+    player.state = "dead"; player.deadT = 1.3; toast(msg); haptic([120, 60, 200]); shake = 0.4;
+    if (ball.state === "held") ball.state = "free";
+  }
+
+  function tryLedge(dir) {
+    const p = player, c = dir > 0 ? Math.floor(p.x + p.w / 2 + 0.08) : Math.floor(p.x - p.w / 2 - 0.08);
+    const top = p.y - p.h;
+    for (let r = Math.floor(top); r <= Math.floor(top + 1.3); r++) {
+      if (solid(c, r) && !solid(c, r - 1) && !solid(c, r - 2) && r >= top - 0.05 && r <= top + 1.3 && r < p.y - 0.4) {
+        if (rectSolid(p.x - p.w / 2, r - p.h, p.x + p.w / 2, p.y - 0.01)) return false;
+        const tx = dir > 0 ? c + p.w / 2 + 0.05 : c + 1 - p.w / 2 - 0.05;
+        p.state = "climb"; p.climb = { x0: p.x, y0: p.y, x1: tx, y1: r, t: 0 }; p.vx = p.vy = 0;
+        if (ball.state === "held") releaseBall();
+        haptic(15);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function updatePlayer(dt) {
+    const p = player;
+    p.kickT = Math.max(0, p.kickT - dt); p.land = Math.max(0, p.land - dt);
+    if (p.state === "dead") { p.deadT -= dt; if (p.deadT <= 0) loadLevel(levelIdx); return; }
+    if (p.state === "climb") {
+      const k = p.climb; k.t += dt / 0.5;
+      if (k.t < 0.65) { p.y = k.y0 + (k.y1 - k.y0) * (k.t / 0.65); p.x = k.x0; }
+      else { p.y = k.y1; p.x = k.x0 + (k.x1 - k.x0) * Math.min(1, (k.t - 0.65) / 0.35); }
+      if (k.t >= 1) { p.state = "normal"; p.onGround = true; p.fallFrom = p.y; p.climb = null; }
+      return;
+    }
+    const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    if (dir) p.facing = dir;
+    const acc = p.onGround ? 45 : 22;
+    p.vx += clamp(dir * RUN - p.vx, -acc * dt, acc * dt);
+    if (jumpPressed && p.onGround) { p.vy = -JUMP_V; p.onGround = false; }
+    jumpPressed = false;
+    p.vy = Math.min(p.vy + G_PLAYER * dt, 22);
+    const wasGround = p.onGround, vyBefore = p.vy;
+    const r = moveRect(p, p.vx * dt, 0);
+    if (r.hitX) p.vx = 0;
+    const ry = moveRect(p, 0, p.vy * dt);
+    p.onGround = false;
+    if (ry.hitY) { if (p.vy > 0) p.onGround = true; p.vy = 0; }
+    if (p.onGround && ry.hitY && ry.hitY.c !== undefined && tile(ry.hitY.c, ry.hitY.r) === "T" || p.onGround && underFeet("T")) {
+      p.vy = -BOUNCE_V; p.onGround = false; p.fallFrom = p.y; haptic(20); bounceFx(p.x, p.y);
+      if (ball.state === "held") releaseBall();
+    }
+    if (!p.onGround) {
+      const toward = dir || (keys.jump ? p.facing : 0);
+      const front = toward > 0 ? p.x + p.w / 2 + 0.06 : p.x - p.w / 2 - 0.06;
+      if (toward && rectSolid(front, p.y - p.h, front + 0.001, p.y - 0.05)) tryLedge(toward);
+      if (wasGround) p.fallFrom = p.y;
+      p.fallFrom = Math.min(p.fallFrom, p.y);
+    } else {
+      if (!wasGround) {
+        if (p.y - p.fallFrom > MAX_FALL) { die("Queda muito alta!"); return; }
+        if (vyBefore > 9) { dust(p.x, p.y, 5); p.land = 0.15; }
+      }
+      p.fallFrom = p.y;
+      for (let c = Math.floor(p.x - p.w / 2); c <= Math.floor(p.x + p.w / 2 - 1e-4); c++) {
+        const cr = crumbles[Math.floor(p.y + 0.02) + "," + c];
+        if (cr && cr.t < 0 && !cr.gone) { cr.t = 0.45; haptic(12); }
+      }
+    }
+    p.anim += Math.abs(p.vx) * dt;
+    for (let rr = Math.floor(p.y - p.h); rr <= Math.floor(p.y - 1e-4); rr++)
+      for (let c = Math.floor(p.x - p.w / 2); c <= Math.floor(p.x + p.w / 2 - 1e-4); c++)
+        if (tile(c, rr) === "^" && p.y > rr + 0.5) { die("Vergalhão!"); return; }
+    if (p.y > ROWS + 2) die("Caiu no buraco!");
+  }
+  function underFeet(ch) {
+    const p = player, r = Math.floor(p.y + 0.02);
+    for (let c = Math.floor(p.x - p.w / 2); c <= Math.floor(p.x + p.w / 2 - 1e-4); c++) if (tile(c, r) === ch) return true;
+    return false;
+  }
+
+  // ---------- Bola ----------
+  function placeHeldBall() {
+    let x = player.x + player.facing * (player.w / 2 + BALL_R + 0.02);
+    if (rectSolid(x - BALL_R, player.y - 2 * BALL_R, x + BALL_R, player.y - 0.01)) x = player.x;
+    ball.rot += (x - ball.x) / BALL_R;
+    ball.x = x; ball.y = player.y - BALL_R; ball.vx = player.vx; ball.vy = 0;
+  }
+  function releaseBall() { ball.state = "free"; ball.vx = player.vx * 0.7; ball.vy = 0; ball.noPick = 0.5; ball.grounded = false; }
+
+  const overlapBox = (x, y, b) => x + BALL_R > b.x0 && x - BALL_R < b.x1 && y + BALL_R > b.y0 && y - BALL_R < b.y1;
+  const keeperBox = () => keeper && { x0: keeper.x - keeper.w / 2, x1: keeper.x + keeper.w / 2, y0: keeper.y - keeper.h / 2, y1: keeper.y + keeper.h / 2 };
+  const defBox = d => ({ x0: d.x - d.w / 2, x1: d.x + d.w / 2, y0: d.y - d.h, y1: d.y });
+  function ballHitsBody(x, y) {
+    if (keeper && overlapBox(x, y, keeperBox())) return { k: keeper };
+    for (const d of defenders) if (overlapBox(x, y, defBox(d))) return { d };
+    return null;
+  }
+  function ballHitsBar(x, y) { return x + BALL_R > goal.x0 - 0.1 && x - BALL_R < goal.x0 + 0.25 && y + BALL_R > goal.y0 - 0.15 && y - BALL_R < goal.y0 + 0.05; }
+  function ballSolid(x, y) {
+    const h = rectSolid(x - BALL_R, y - BALL_R, x + BALL_R, y + BALL_R);
+    if (h && h.c !== undefined && tile(h.c, h.r) === "S") hitSwitch(h);
+    return h || (ballHitsBar(x, y) ? { bar: true } : null);
+  }
+  function hitSwitch(h) {
+    if (gate.open) return;
+    gate.open = true; grid[h.r][h.c] = "s"; toast("Portão aberto!"); haptic([30, 40, 30]); shake = 0.25;
+    for (let i = 0; i < 18; i++) particles.push({ x: h.c + 0.5, y: h.r + 0.5, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, t: 0.7, col: "#5fd38a" });
+  }
+  function clearBall(d) {
+    const away = ball.x < d.x ? -1 : 1;
+    ball.state = "free"; ball.vx = away * 7.5; ball.vy = -7; ball.noPick = 0.4; d.busy = 0.6; d.kick = 0.3;
+    toast("Desarme!", 1); haptic(60);
+  }
+
+  function checkGoal() {
+    if (ball.x > goal.x0 + 0.3 && ball.y > goal.y0 && ball.y < goal.y1 && ball.x < goal.x1 + 0.5) {
+      mode = "won"; haptic([60, 40, 60, 40, 160]); shake = 0.5; slow = 0.25; netBulge = 1;
+      for (let i = 0; i < 60; i++) particles.push({ x: ball.x, y: ball.y, vx: (Math.random() - 0.75) * 14, vy: (Math.random() - 0.85) * 14, t: 1.6, col: ["#f7d117", "#1f9d55", "#2a5bd7", "#fbf3e4"][i % 4], conf: true, rot: Math.random() * 6 });
+      ball.vx = Math.max(ball.vx, 3) * 0.4; ball.vy *= 0.2; ball.state = "free";
+      setTimeout(showWin, 1300);
+      return true;
+    }
+    return false;
+  }
+
+  function updateBall(dt) {
+    ball.noPick = Math.max(0, ball.noPick - dt);
+    if (ball.state === "held") {
+      for (const d of defenders) if (d.busy <= 0 && overlapBox(ball.x, ball.y, defBox(d))) { clearBall(d); player.vx = (player.x < d.x ? -1 : 1) * 4; return; }
+      if (!player.onGround || player.state !== "normal") releaseBall();
+      else { placeHeldBall(); return; }
+    }
+    if (ball.state === "flight") {
+      const steps = 4;
+      for (let i = 0; i < steps; i++) {
+        const prev = pathAt(ball.path, ball.s);
+        ball.s += FLIGHT_SPEED * dt / steps;
+        const p = pathAt(ball.path, ball.s);
+        ball.rot += FLIGHT_SPEED * dt / steps / BALL_R;
+        const body = ballHitsBody(p.x, p.y);
+        if (ballSolid(p.x, p.y) || body) {
+          let vx = p.tx * FLIGHT_SPEED, vy = p.ty * FLIGHT_SPEED;
+          if (body && body.k) { vx = -Math.abs(vx) * 0.45; vy = vy * 0.4 - 2; toast("Defesa do goleiro!"); haptic(50); keeper.dive = 0.5; }
+          else if (body && body.d) { vx = (p.x < body.d.x ? -1 : 1) * Math.abs(vx) * 0.4; vy = -5; toast("Cabeceou!", 1); haptic(40); body.d.busy = 0.5; }
+          else {
+            const bx = ballSolid(p.x, prev.y), by = ballSolid(prev.x, p.y);
+            if (bx) vx *= -0.45;
+            if (by) vy *= -0.45;
+            if (!bx && !by) { vx *= -0.45; vy *= -0.45; }
+            haptic(15);
+          }
+          ball.x = prev.x; ball.y = prev.y; ball.vx = vx; ball.vy = vy; ball.state = "free"; ball.noPick = 0.3;
+          break;
+        }
+        ball.x = p.x; ball.y = p.y;
+        if (checkGoal()) return;
+        if (ball.s >= ball.reach) {
+          const sp = ball.short ? 6.5 : 6 + 10 * Math.min(1, ball.excess / 6);
+          ball.vx = p.tx * sp; ball.vy = p.ty * sp; ball.state = "free"; ball.noPick = 0.3;
+          break;
+        }
+      }
+      return;
+    }
+    if (ball.state === "free") {
+      const steps = 4, h = dt / steps;
+      ball.grounded = false;
+      for (let i = 0; i < steps; i++) {
+        ball.vy = Math.min(ball.vy + G_BALL * h, 25);
+        const nx = ball.x + ball.vx * h;
+        if (ballSolid(nx, ball.y) || ballHitsBody(nx, ball.y)) ball.vx *= -0.5; else ball.x = nx;
+        const ny = ball.y + ball.vy * h;
+        const hy = ballSolid(ball.x, ny);
+        if (hy || ballHitsBody(ball.x, ny)) {
+          if (ball.vy > 0 && hy && hy.c !== undefined && tile(hy.c, hy.r) === "T") { ball.vy = -Math.max(ball.vy * 0.85, 12); bounceFx(ball.x, ball.y + BALL_R); continue; }
+          if (ball.vy > 0) { ball.grounded = true; ball.vx *= Math.exp(-2.8 * h); if (hy && hy.plat) ball.x += hy.plat.dx * 0; }
+          if (ball.vy > 6) dust(ball.x, ball.y + BALL_R, 2);
+          ball.vy *= -0.45; if (Math.abs(ball.vy) < 1.6) ball.vy = 0;
+        } else ball.y = ny;
+        ball.rot += ball.vx * h / BALL_R;
+      }
+      if (ball.grounded && Math.abs(ball.vx) < 0.05) ball.vx = 0;
+      if (mode === "play") {
+        if (checkGoal()) return;
+        for (const d of defenders) if (d.busy <= 0 && overlapBox(ball.x, ball.y, defBox(d))) { clearBall(d); break; }
+      }
+      if (ball.y > ROWS + 1) {
+        kicks++; updateKicks(); toast("Bola perdida! +1 chute"); haptic(80);
+        ball.x = lastKick.x; ball.y = lastKick.y - 0.4; ball.vx = ball.vy = 0; ball.state = "free";
+        return;
+      }
+      const p = player;
+      if (mode === "play" && ball.noPick <= 0 && p.state === "normal" && p.onGround && Math.hypot(ball.vx, ball.vy) < 4.5 &&
+          Math.abs(ball.x - p.x) < p.w / 2 + BALL_R + 0.1 && ball.y > p.y - p.h && ball.y < p.y + 0.1) {
+        ball.state = "held"; haptic(8);
+      }
+    }
+  }
+
+  function updateWorld(dt) {
+    if (keeper) {
+      keeper.t += dt; keeper.dive = Math.max(0, keeper.dive - dt);
+      keeper.y = keeper.cy + Math.sin(keeper.t * 1.9) * keeper.amp;
+    }
+    for (const d of defenders) {
+      d.busy = Math.max(0, d.busy - dt); d.kick = Math.max(0, (d.kick || 0) - dt);
+      if (d.busy > 0) continue;
+      // marca: vira para o lado da bola quando ela está perto
+      d.x += d.dir * 1.8 * dt; d.anim += 1.8 * dt;
+      if (d.x < d.x0) { d.x = d.x0; d.dir = 1; } if (d.x > d.x1) { d.x = d.x1; d.dir = -1; }
+    }
+    for (const pl of platforms) {
+      const nx = clamp(pl.x + pl.dir * pl.speed * dt, pl.x0, pl.x1);
+      if (nx === pl.x0 || nx === pl.x1) pl.dir *= -1;
+      pl.dx = nx - pl.x;
+      const p = player, onIt = p.onGround && Math.abs(p.y - pl.y) < 0.02 && p.x + p.w / 2 > pl.x && p.x - p.w / 2 < pl.x + pl.w;
+      const ballOn = ball.state === "free" && ball.grounded && Math.abs(ball.y + BALL_R - pl.y) < 0.05 && ball.x > pl.x && ball.x < pl.x + pl.w;
+      pl.x = nx;
+      if (onIt) moveRect(p, pl.dx, 0);
+      if (ballOn) ball.x += pl.dx;
+      if (p.state === "normal" && p.x + p.w / 2 > pl.x && p.x - p.w / 2 < pl.x + pl.w && p.y > pl.y + 0.02 && p.y - p.h < pl.y + 0.5)
+        p.x = p.x < pl.x + pl.w / 2 ? pl.x - p.w / 2 - 1e-3 : pl.x + pl.w + p.w / 2 + 1e-3;
+    }
+    if (gate.open) gate.t = Math.min(1, gate.t + dt / 0.9);
+    for (const k in crumbles) {
+      const cr = crumbles[k];
+      if (cr.t >= 0 && !cr.gone) {
+        cr.t -= dt;
+        if (cr.t <= 0) {
+          cr.gone = true; const [r, c] = k.split(",").map(Number);
+          for (let i = 0; i < 7; i++) particles.push({ x: c + Math.random(), y: r + Math.random() * 0.3, vx: (Math.random() - 0.5) * 2, vy: Math.random() * 2, t: 1.1, col: i % 2 ? "#8a5a33" : "#b07a46", sq: true, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8 });
+        }
+      }
+    }
+    for (const p of particles) { p.t -= dt; p.vy += (p.conf ? 6 : p.dust ? -1 : 18) * dt; if (p.conf) p.vx *= 0.99; p.x += p.vx * dt; p.y += p.vy * dt; if (p.vr) p.rot += p.vr * dt; }
+    particles = particles.filter(p => p.t > 0);
+    if (ball.state === "flight" || (ball.state === "free" && Math.hypot(ball.vx, ball.vy) > 8)) trail.push({ x: ball.x, y: ball.y, t: 0.25 });
+    for (const t of trail) t.t -= dt;
+    trail = trail.filter(t => t.t > 0);
+    netBulge = Math.max(0, netBulge - dt * 0.8);
+  }
+  function dust(x, y, n) { for (let i = 0; i < n; i++) particles.push({ x: x + (Math.random() - 0.5) * 0.4, y, vx: (Math.random() - 0.5) * 2.5, vy: -Math.random() * 1.2, t: 0.5 + Math.random() * 0.3, col: "rgba(214,176,132,0.7)", dust: true, r: 0.08 + Math.random() * 0.1 }); }
+  function bounceFx(x, y) { for (let i = 0; i < 6; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 3, t: 0.4, col: "rgba(255,255,255,0.7)", dust: true, r: 0.06 }); }
+
+  // ---------- Arte pré-renderizada ----------
+  function buildSky() {
+    skyCv = mkCanvas(W * DPR, H * DPR); const c = skyCv.getContext("2d");
+    const g = c.createLinearGradient(0, 0, 0, skyCv.height);
+    g.addColorStop(0, "#241f52"); g.addColorStop(0.35, "#5b3a78"); g.addColorStop(0.62, "#c4567a"); g.addColorStop(0.8, "#f08a4b"); g.addColorStop(1, "#ffc46b");
+    c.fillStyle = g; c.fillRect(0, 0, skyCv.width, skyCv.height);
+    const sx = skyCv.width * 0.72, sy = skyCv.height * 0.6, sr = skyCv.height * 0.09;
+    const glow = c.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 5);
+    glow.addColorStop(0, "rgba(255,214,140,0.55)"); glow.addColorStop(1, "rgba(255,214,140,0)");
+    c.fillStyle = glow; c.fillRect(0, 0, skyCv.width, skyCv.height);
+    c.fillStyle = "#ffe3a1"; c.beginPath(); c.arc(sx, sy, sr, 0, 7); c.fill();
+    const R = rng(7); c.fillStyle = "rgba(255,255,255,0.7)";
+    for (let i = 0; i < 50; i++) { c.globalAlpha = R() * 0.7; c.beginPath(); c.arc(R() * skyCv.width, R() * skyCv.height * 0.3, R() * 1.4 * DPR, 0, 7); c.fill(); }
+    c.globalAlpha = 1;
+    // nuvens finas
+    c.fillStyle = "rgba(255,190,170,0.18)";
+    for (let i = 0; i < 6; i++) { const y = skyCv.height * (0.32 + R() * 0.25), x = R() * skyCv.width; c.beginPath(); c.ellipse(x, y, skyCv.width * (0.08 + R() * 0.12), skyCv.height * 0.012, 0, 0, 7); c.fill(); }
+  }
+  function drawHill(c, w, h, baseY, amp, R, palette, haze, scale, windows) {
+    // morro com casinhas empilhadas (favela)
+    const pts = []; for (let x = 0; x <= w; x += 20) pts.push([x, baseY - amp * (0.55 + 0.45 * Math.sin(x / w * Math.PI * 2 + 1.3)) - amp * 0.2 * Math.sin(x / w * Math.PI * 6)]);
+    const yAt = x => { const i = Math.min(pts.length - 2, Math.floor(x / 20)); const f = (x - pts[i][0]) / 20; return pts[i][1] * (1 - f) + pts[i + 1][1] * f; };
+    let x = 0;
+    while (x < w) {
+      const hw = (14 + R() * 22) * scale, hh = (12 + R() * 20) * scale, gy = yAt(Math.min(w - 1, x + hw / 2));
+      for (let layer = 0; layer < 3; layer++) {
+        const y = gy + layer * hh * 0.85;
+        if (y > h) break;
+        const col = palette[Math.floor(R() * palette.length)];
+        c.fillStyle = col; c.fillRect(x, y - hh, hw, hh + 2);
+        c.fillStyle = haze; c.fillRect(x, y - hh, hw, hh + 2);
+        c.fillStyle = "rgba(0,0,0,0.18)"; c.fillRect(x + hw - 2 * scale, y - hh, 2 * scale, hh);
+        if (windows) for (let wy = y - hh + 4 * scale; wy < y - 5 * scale; wy += 8 * scale) for (let wx = x + 3 * scale; wx < x + hw - 5 * scale; wx += 8 * scale) {
+          if (R() < 0.35) { c.fillStyle = R() < 0.6 ? "#ffd27a" : "rgba(30,20,40,0.5)"; c.fillRect(wx, wy, 3 * scale, 3.5 * scale); }
+        }
+        if (layer === 0 && R() < 0.3) { c.fillStyle = "#3d7fb8"; c.fillRect(x + hw * 0.55, y - hh - 6 * scale, 8 * scale, 6 * scale); c.fillStyle = haze; c.fillRect(x + hw * 0.55, y - hh - 6 * scale, 8 * scale, 6 * scale); }
+      }
+      x += hw + R() * 3 * scale;
+    }
+    c.fillStyle = palette[0]; c.fillRect(0, h - 4, w, 4);
+  }
+  function buildFar() {
+    const w = Math.max(W * 2, 1200) * DPR, h = H * DPR;
+    farCv = [mkCanvas(w, h), mkCanvas(w, h)];
+    const R = rng(42);
+    drawHill(farCv[0].getContext("2d"), w, h, h * 0.55, h * 0.12, R, ["#9b6a7d", "#a77a6f", "#8a7590", "#b58a77", "#7e6b8c"], "rgba(196,110,140,0.6)", DPR * H / 400, true);
+    drawHill(farCv[1].getContext("2d"), w, h, h * 0.66, h * 0.07, R, ["#6b3f4f", "#7a4a45", "#5e3e57", "#8a5547", "#4e3a52"], "rgba(70,30,60,0.35)", DPR * H / 300, true);
+  }
+  function buildVignette() {
+    vigCv = mkCanvas(W * DPR, H * DPR); const c = vigCv.getContext("2d");
+    const g = c.createRadialGradient(vigCv.width / 2, vigCv.height * 0.45, vigCv.height * 0.3, vigCv.width / 2, vigCv.height * 0.5, vigCv.width * 0.75);
+    g.addColorStop(0, "rgba(20,10,30,0)"); g.addColorStop(1, "rgba(20,10,30,0.45)");
+    c.fillStyle = g; c.fillRect(0, 0, vigCv.width, vigCv.height);
+    const w = c.createLinearGradient(0, 0, vigCv.width, 0);
+    w.addColorStop(0, "rgba(255,150,80,0)"); w.addColorStop(1, "rgba(255,150,80,0.08)");
+    c.fillStyle = w; c.fillRect(0, 0, vigCv.width, vigCv.height);
+  }
+
+  function buildLevelCanvas() {
+    TS = Math.round(Math.min(S * DPR, 72));
+    levelCv = mkCanvas(cols * TS, ROWS * TS);
+    const c = levelCv.getContext("2d"), T = TS, R = rng(levelIdx * 97 + 3);
+    const isS = (cc, rr) => { const t = tile(cc, rr); return t === "#"; };
+    for (let r = 0; r < ROWS; r++) for (let col = 0; col < cols; col++) {
+      const t = grid[r][col], X = col * T, Y = r * T;
+      if (t === "#") {
+        const earth = r >= 10;
+        if (earth) {
+          const g = c.createLinearGradient(0, Y, 0, Y + T);
+          g.addColorStop(0, r === 10 ? "#8a5232" : "#5d3722"); g.addColorStop(1, r === 10 ? "#6e3f27" : "#45291a");
+          c.fillStyle = g; c.fillRect(X, Y, T + 1, T + 1);
+          for (let i = 0; i < 5; i++) { c.fillStyle = R() < 0.5 ? "rgba(255,220,180,0.12)" : "rgba(0,0,0,0.15)"; c.beginPath(); c.ellipse(X + R() * T, Y + R() * T, T * (0.03 + R() * 0.05), T * (0.02 + R() * 0.03), 0, 0, 7); c.fill(); }
+        } else {
+          c.fillStyle = "#8f6e5c"; c.fillRect(X, Y, T + 1, T + 1);
+          const bh = T / 4, bw = T / 2;
+          for (let row = 0; row < 4; row++) {
+            const off = ((r * 4 + row) % 2) * bw / 2;
+            for (let bx = -1; bx < 3; bx++) {
+              const x0 = X + bx * bw + off, y0 = Y + row * bh;
+              const l = Math.max(X, x0 + 1), rr = Math.min(X + T, x0 + bw - 1);
+              if (rr <= l) continue;
+              const hue = 12 + R() * 10, lig = 40 + R() * 12;
+              c.fillStyle = `hsl(${hue} 55% ${lig}%)`; c.fillRect(l, y0 + 1, rr - l, bh - 2);
+              c.fillStyle = "rgba(255,210,170,0.12)"; c.fillRect(l, y0 + 1, rr - l, Math.max(1, bh * 0.18));
+            }
+          }
+          // reboco descascado em alguns blocos
+          if (r > 0 && R() < 0.18) {
+            c.fillStyle = "rgba(200,184,164,0.85)"; c.beginPath();
+            const px = X + T * (0.15 + R() * 0.3), py = Y + T * (0.2 + R() * 0.3), pw = T * (0.35 + R() * 0.25), ph = T * (0.25 + R() * 0.2);
+            c.moveTo(px, py); c.lineTo(px + pw * 0.6, py - ph * 0.15); c.lineTo(px + pw, py + ph * 0.3); c.lineTo(px + pw * 0.8, py + ph); c.lineTo(px + pw * 0.2, py + ph * 0.85); c.closePath(); c.fill();
+            c.fillStyle = "rgba(0,0,0,0.12)"; c.fillRect(px, py + ph * 0.85, pw * 0.8, Math.max(1, T * 0.02));
+          }
+          if (!isS(col - 1, r)) { c.fillStyle = "rgba(255,180,120,0.18)"; c.fillRect(X, Y, T * 0.08, T); }
+          if (!isS(col + 1, r)) { c.fillStyle = "rgba(20,0,20,0.25)"; c.fillRect(X + T * 0.9, Y, T * 0.1, T); }
+        }
+        if (!solid(col, r - 1) && r > 0 && tile(col, r - 1) !== "C") {
+          if (earth) {
+            c.fillStyle = "#a8683d"; c.fillRect(X, Y, T + 1, T * 0.12);
+            c.fillStyle = "#4f9a3a";
+            for (let i = 0; i < 4; i++) { if (R() < 0.6) { const gx = X + R() * T; c.beginPath(); c.moveTo(gx - T * 0.06, Y + T * 0.05); c.lineTo(gx, Y - T * (0.08 + R() * 0.1)); c.lineTo(gx + T * 0.06, Y + T * 0.05); c.fill(); } }
+          } else {
+            c.fillStyle = "#d4cbbb"; c.fillRect(X - 1, Y, T + 2, T * 0.14);
+            c.fillStyle = "rgba(0,0,0,0.25)"; c.fillRect(X - 1, Y + T * 0.14, T + 2, T * 0.04);
+          }
+        }
+      } else if (t === "^") {
+        c.fillStyle = "#24161c"; c.fillRect(X, Y, T + 1, T + 1);
+        for (let i = 0; i < 4; i++) {
+          const bx = X + T * (0.12 + i * 0.25), top = Y + T * (0.25 + R() * 0.15);
+          c.fillStyle = "#7a3d22"; c.fillRect(bx, top, T * 0.07, Y + T - top);
+          c.fillStyle = "#c97a48"; c.fillRect(bx, top, T * 0.025, Y + T - top);
+          c.fillStyle = "#d9d2c8"; c.beginPath(); c.moveTo(bx - T * 0.02, top); c.lineTo(bx + T * 0.035, top - T * 0.12); c.lineTo(bx + T * 0.09, top); c.fill();
+        }
+      } else if (t === "T") {
+        c.fillStyle = "#2b5aa8"; c.beginPath(); c.roundRect(X + 1, Y + T * 0.35, T - 2, T * 0.65, T * 0.15); c.fill();
+        c.strokeStyle = "rgba(255,255,255,0.35)"; c.lineWidth = Math.max(1, T * 0.03);
+        c.beginPath(); for (let i = 1; i < 4; i++) { c.moveTo(X + T * i / 4, Y + T * 0.4); c.lineTo(X + T * i / 4, Y + T * 0.95); } c.stroke();
+        c.fillStyle = "#e9e1cf"; c.fillRect(X + 1, Y + T * 0.35, T - 2, T * 0.1);
+      }
+      // sombra de contato sob lajes
+      if (!solid(col, r) && t !== "^" && isS(col, r - 1)) {
+        const g = c.createLinearGradient(0, Y, 0, Y + T * 0.5); g.addColorStop(0, "rgba(20,5,25,0.45)"); g.addColorStop(1, "rgba(20,5,25,0)");
+        c.fillStyle = g; c.fillRect(X, Y, T, T * 0.5);
+      }
+      if (!solid(col, r) && t !== "^" && isS(col - 1, r)) {
+        const g = c.createLinearGradient(X, 0, X + T * 0.35, 0); g.addColorStop(0, "rgba(20,5,25,0.3)"); g.addColorStop(1, "rgba(20,5,25,0)");
+        c.fillStyle = g; c.fillRect(X, Y, T * 0.35, T);
+      }
+    }
+  }
+
+  // ---------- Desenho ----------
+  const kites = [{ x: 0.2, y: 0.18, c: "#e8413b", p: 0 }, { x: 0.55, y: 0.12, c: "#2a8de0", p: 2 }, { x: 0.85, y: 0.22, c: "#f2c32a", p: 4 }];
+  function drawBackground(cx) {
+    ctx.drawImage(skyCv, 0, 0, W, H);
+    const fw = farCv[0].width / DPR;
+    [[0, 0.08], [1, 0.22]].forEach(([i, k]) => {
+      let ox = -((cx * S * k) % fw);
+      ctx.drawImage(farCv[i], ox, 0, fw, H); ctx.drawImage(farCv[i], ox + fw, 0, fw, H);
+      if (i === 0) { ctx.fillStyle = "rgba(120,60,110,0.25)"; ctx.fillRect(0, 0, W, H); }
+    });
+    // névoa do entardecer para separar o cenário do jogo
+    const fog = ctx.createLinearGradient(0, H * 0.35, 0, ROWS * S);
+    fog.addColorStop(0, "rgba(90,45,90,0)"); fog.addColorStop(1, "rgba(90,45,90,0.35)");
+    ctx.fillStyle = fog; ctx.fillRect(0, 0, W, H);
+    // postes e fios
+    const pk = 0.45, spacing = 9 * S, base = ROWS * S;
+    const off = -((cx * S * pk) % spacing);
+    ctx.strokeStyle = "rgba(30,15,35,0.85)"; ctx.fillStyle = "rgba(30,15,35,0.9)";
+    for (let x = off - spacing; x < W + spacing; x += spacing) {
+      ctx.fillRect(x - S * 0.07, base * 0.18, S * 0.14, base);
+      ctx.fillRect(x - S * 0.5, base * 0.2, S, S * 0.08);
+      ctx.lineWidth = 1.2;
+      for (let j = -1; j <= 1; j += 2) { ctx.beginPath(); ctx.moveTo(x + j * S * 0.45, base * 0.2); ctx.quadraticCurveTo(x + spacing / 2, base * 0.2 + S * 1.1, x + spacing + j * S * 0.45, base * 0.2); ctx.stroke(); }
+    }
+    // pipas
+    for (const k of kites) {
+      const kx = ((k.x * W * 1.6 - cx * S * 0.3) % (W * 1.6) + W * 1.6) % (W * 1.6) - W * 0.3;
+      const ky = k.y * H + Math.sin(time * 1.3 + k.p) * S * 0.25, sz = S * 0.32, rot = Math.sin(time * 1.7 + k.p) * 0.25;
+      ctx.save(); ctx.translate(kx, ky); ctx.rotate(rot);
+      ctx.fillStyle = k.c; ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(sz * 0.75, 0); ctx.lineTo(0, sz * 1.1); ctx.lineTo(-sz * 0.75, 0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(0, sz * 1.1); ctx.moveTo(-sz * 0.75, 0); ctx.lineTo(sz * 0.75, 0); ctx.stroke();
+      ctx.strokeStyle = k.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, sz * 1.1);
+      for (let i = 1; i <= 6; i++) ctx.lineTo(Math.sin(time * 4 + i + k.p) * sz * 0.25, sz * 1.1 + i * sz * 0.3); ctx.stroke();
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(kx, ky + sz); ctx.lineTo(kx - S * 4, H); ctx.stroke();
+    }
+  }
+
+  function drawDynamicTiles(cx) {
+    const c0 = Math.max(0, Math.floor(cx) - 1), c1 = Math.min(cols - 1, Math.ceil(cx + viewW) + 1);
+    for (let r = 0; r < ROWS; r++) for (let c = c0; c <= c1; c++) {
+      const t = grid[r][c], X = (c - cx) * S, Y = r * S;
+      if (t === "C") {
+        const cr = crumbles[r + "," + c]; if (cr.gone) continue;
+        const sh = cr.t >= 0 ? (Math.random() - 0.5) * S * 0.08 : 0;
+        ctx.fillStyle = "#8a5a33"; ctx.fillRect(X + sh, Y, S + 0.5, S * 0.3);
+        ctx.fillStyle = "#b07a46"; ctx.fillRect(X + sh, Y, S + 0.5, S * 0.08);
+        ctx.strokeStyle = "rgba(40,20,10,0.7)"; ctx.lineWidth = Math.max(1, S * 0.03);
+        ctx.beginPath(); ctx.moveTo(X + sh + S * 0.25, Y + S * 0.05); ctx.lineTo(X + sh + S * 0.4, Y + S * 0.18); ctx.lineTo(X + sh + S * 0.33, Y + S * 0.3);
+        ctx.moveTo(X + sh, Y + S * 0.18); ctx.lineTo(X + sh + S, Y + S * 0.18); ctx.stroke();
+        ctx.fillStyle = "#3a2a20"; ctx.beginPath(); ctx.arc(X + sh + S * 0.12, Y + S * 0.15, S * 0.03, 0, 7); ctx.arc(X + sh + S * 0.88, Y + S * 0.15, S * 0.03, 0, 7); ctx.fill();
+      } else if (t === "D") {
+        const lift = gate.t * S * 10;
+        ctx.save(); ctx.beginPath(); ctx.rect(X, Y, S, S); ctx.clip();
+        ctx.fillStyle = "#4a5260"; ctx.fillRect(X + S * 0.05, Y - lift, S * 0.9, S);
+        ctx.fillStyle = "#6c7686";
+        for (let i = 0; i < 4; i++) ctx.fillRect(X + S * 0.05, Y - lift + S * i / 4, S * 0.9, S * 0.06);
+        ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(X + S * 0.85, Y - lift, S * 0.1, S);
+        ctx.restore();
+      } else if (t === "S" || t === "s") {
+        const on = t === "s";
+        ctx.strokeStyle = "#3a2a20"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X + S * 0.5, Y); ctx.lineTo(X + S * 0.5, Y + S * 0.2); ctx.stroke();
+        const R = S * 0.42, cxp = X + S / 2, cyp = Y + S * 0.58 + (on ? Math.sin(time * 6) * S * 0.03 : 0);
+        [[1, on ? "#1f9d55" : "#e2412f"], [0.7, "#fbf3e4"], [0.4, on ? "#1f9d55" : "#e2412f"], [0.12, "#fbf3e4"]].forEach(([k, col]) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cxp, cyp, R * k, 0, 7); ctx.fill(); });
+      }
+    }
+    for (const pl of platforms) {
+      const X = (pl.x - cx) * S, Y = pl.y * S, w = pl.w * S;
+      ctx.fillStyle = "#7d8794"; ctx.fillRect(X + S * 0.15, Y + S * 0.4, S * 0.08, S * 1.2); ctx.fillRect(X + w - S * 0.23, Y + S * 0.4, S * 0.08, S * 1.2);
+      ctx.fillStyle = "#a26a3a"; ctx.fillRect(X, Y, w, S * 0.42);
+      ctx.fillStyle = "#c48a50"; ctx.fillRect(X, Y, w, S * 0.08);
+      ctx.strokeStyle = "rgba(50,25,10,0.5)"; ctx.lineWidth = 1; ctx.beginPath();
+      for (let i = 1; i < pl.w * 2; i++) { ctx.moveTo(X + i * S / 2, Y + S * 0.1); ctx.lineTo(X + i * S / 2, Y + S * 0.42); } ctx.stroke();
+    }
+  }
+
+  function drawGoal(cx, back) {
+    const X = (goal.x0 - cx) * S, Y = goal.y0 * S, w = (goal.x1 - goal.x0) * S, h = (goal.y1 - goal.y0) * S;
+    const depth = Math.min(w, S * 0.9), bulge = Math.sin(netBulge * Math.PI) * S * 0.35 * (netBulge > 0 ? 1 : 0);
+    if (back) {
+      ctx.fillStyle = "rgba(251,243,228,0.07)"; ctx.fillRect(X, Y, w, h);
+      ctx.strokeStyle = "rgba(251,243,228,0.45)"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      const n = 10;
+      for (let i = 0; i <= n; i++) { const yy = Y + h * i / n; ctx.moveTo(X, yy); ctx.quadraticCurveTo(X + depth / 2 + bulge, yy + S * 0.05, X + depth + bulge * 0.6, yy); }
+      for (let i = 1; i <= 4; i++) { const xx = X + depth * i / 4; ctx.moveTo(xx + bulge * (i / 4), Y); ctx.lineTo(xx + bulge * (i / 4), Y + h); }
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(251,243,228,0.6)"; ctx.lineWidth = Math.max(2, S * 0.06);
+      ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + depth, Y + S * 0.1); ctx.lineTo(X + depth, Y + h); ctx.stroke();
+    } else {
+      const g = ctx.createLinearGradient(X - S * 0.1, 0, X + S * 0.1, 0); g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#bdb6a8");
+      ctx.fillStyle = g; ctx.fillRect(X - S * 0.09, Y - S * 0.12, S * 0.18, h + S * 0.12);
+      ctx.fillStyle = "#fff"; ctx.fillRect(X - S * 0.09, Y - S * 0.12, depth + S * 0.09, S * 0.12);
+      ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.ellipse(X, Y + h, S * 0.2, S * 0.05, 0, 0, 7); ctx.fill();
+    }
+  }
+
+  // Boneco articulado: ângulos em radianos a partir da vertical, positivos para frente.
+  function limb(x, y, a1, l1, a2, l2, f, w, col, s) {
+    const kx = x + Math.sin(a1) * l1 * f * s, ky = y + Math.cos(a1) * l1 * s;
+    const ex = kx + Math.sin(a2) * l2 * f * s, ey = ky + Math.cos(a2) * l2 * s;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.strokeStyle = "#1a1012"; ctx.lineWidth = (w + 2.2) * s; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(kx, ky); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.strokeStyle = col; ctx.lineWidth = w * s; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(kx, ky); ctx.lineTo(ex, ey); ctx.stroke();
+    return { kx, ky, ex, ey };
+  }
+  function drawGuy(X, Y, s, f, P, kit) {
+    const hipX = X, hipY = Y - 24 * s + (P.bob || 0) * s;
+    const leg = (hip, knee, front) => {
+      const sock = front ? kit.sock : kit.sockB || kit.sock;
+      const r = limb(hipX, hipY, hip, 12, hip - knee, 11, f, 6.4, kit.skin, s);
+      // short e meião
+      limb(hipX, hipY, hip, 6, hip, 0.1, f, 8, kit.shorts, s);
+      ctx.strokeStyle = sock; ctx.lineWidth = 6 * s; ctx.beginPath(); ctx.moveTo(r.kx + (r.ex - r.kx) * 0.25, r.ky + (r.ey - r.ky) * 0.25); ctx.lineTo(r.ex, r.ey); ctx.stroke();
+      ctx.fillStyle = kit.shoe; ctx.beginPath(); ctx.ellipse(r.ex + 2.2 * f * s, r.ey + 0.8 * s, 4.6 * s, 2.6 * s, 0, 0, 7); ctx.fill();
+    };
+    const lean = P.lean || 0;
+    const shX = hipX + Math.sin(lean) * 22 * s * f, shY = hipY - Math.cos(lean) * 22 * s;
+    const arm = (sh, el) => { const r = limb(shX, shY + 2 * s, sh, 9, sh + el, 9, f, 5, kit.skin, s); limb(shX, shY + 2 * s, sh, 4.5, sh, 0.1, f, 6.5, kit.sleeve || kit.shirt, s); if (kit.glove) { ctx.fillStyle = kit.glove; ctx.beginPath(); ctx.arc(r.ex, r.ey, 3.4 * s, 0, 7); ctx.fill(); } };
+    arm(P.shB, P.elB);
+    leg(P.hipB, P.kneeB, false);
+    // tronco
+    ctx.save(); ctx.translate(hipX, hipY); ctx.rotate(lean * f);
+    ctx.fillStyle = "#1a1012"; ctx.beginPath(); ctx.roundRect(-8.2 * s, -24.2 * s, 16.4 * s, 26 * s, 5 * s); ctx.fill();
+    ctx.fillStyle = kit.shirt; ctx.beginPath(); ctx.roundRect(-7 * s, -23 * s, 14 * s, 23.5 * s, 4 * s); ctx.fill();
+    if (kit.stripes) { ctx.fillStyle = kit.stripes; for (let i = -1; i <= 1; i++) ctx.fillRect((i * 4.6 - 1.2) * s, -23 * s, 2.4 * s, 23 * s); }
+    ctx.fillStyle = "rgba(0,0,0,0.12)"; ctx.fillRect(-7 * s * f, -23 * s, 4 * s, 23 * s);
+    ctx.fillStyle = kit.trim; ctx.fillRect(-7 * s, -23 * s, 14 * s, 2.5 * s);
+    if (kit.num) { ctx.fillStyle = kit.trim; ctx.font = `700 ${9 * s}px "Barlow Condensed", sans-serif`; ctx.textAlign = "center"; ctx.fillText(kit.num, -1 * f * s, -9 * s); }
+    ctx.restore();
+    // cabeça
+    const hx = shX + Math.sin(lean) * 7 * s * f, hy = shY - 8 * s;
+    ctx.fillStyle = "#1a1012"; ctx.beginPath(); ctx.arc(hx, hy, 7.6 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = kit.skin; ctx.beginPath(); ctx.arc(hx, hy, 6.6 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = kit.hair; ctx.beginPath(); ctx.arc(hx - 0.8 * f * s, hy - 1.4 * s, 6.8 * s, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+    for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(hx + (-4 + i * 2.4) * f * s, hy - 6 * s, 2.1 * s, 0, 7); ctx.fill(); }
+    ctx.fillStyle = "#1a1012"; ctx.beginPath(); ctx.arc(hx + 3.4 * f * s, hy + 0.2 * s, 0.95 * s, 0, 7); ctx.fill();
+    leg(P.hipF, P.kneeF, true);
+    arm(P.shF, P.elF);
+  }
+  const KIT_PLAYER = { shirt: "#f7d117", sleeve: "#f7d117", trim: "#1f9d55", shorts: "#1d4fbf", sock: "#f4f1ea", shoe: "#16161a", skin: "#8d5a3b", hair: "#1a1210", num: "10" };
+  const KIT_DEF = { shirt: "#fbf3e4", stripes: "#c8242b", sleeve: "#c8242b", trim: "#c8242b", shorts: "#16161a", sock: "#c8242b", shoe: "#16161a", skin: "#e0ac80", hair: "#5a3420" };
+  const KIT_GK = { shirt: "#2b2b30", sleeve: "#ff7a1a", trim: "#ff7a1a", shorts: "#2b2b30", sock: "#ff7a1a", shoe: "#16161a", skin: "#6b4228", hair: "#120c0a", glove: "#ff7a1a", num: "1" };
+
+  function poseRun(ph, amp) {
+    const s = Math.sin(ph), c = Math.cos(ph);
+    return { hipF: s * 0.75 * amp, kneeF: Math.max(0, -c) * 1.1 * amp + 0.1, hipB: -s * 0.75 * amp, kneeB: Math.max(0, c) * 1.1 * amp + 0.1,
+      shF: -s * 0.8 * amp, elF: 1.2, shB: s * 0.8 * amp, elB: 1.2, lean: 0.12 * amp, bob: -Math.abs(c) * 1.5 * amp };
+  }
+  function playerPose(p) {
+    if (p.state === "climb") {
+      const k = p.climb.t;
+      if (k < 0.65) return { hipF: 0.5 + k * 0.6, kneeF: 1.0, hipB: -0.1, kneeB: 0.4, shF: 2.9, elF: 0.1, shB: 2.7, elB: 0.2, lean: 0.1 };
+      return { hipF: 1.2, kneeF: 1.6, hipB: 0.3, kneeB: 0.9, shF: 1.6, elF: 0.8, shB: 1.4, elB: 0.8, lean: 0.35 };
+    }
+    if (p.kickT > 0) {
+      const k = 1 - p.kickT / 0.32, sw = k < 0.35 ? -0.9 * (k / 0.35) : -0.9 + (k - 0.35) / 0.65 * 2.4;
+      return { hipF: sw, kneeF: k < 0.35 ? 1.4 : 0.3, hipB: -0.1, kneeB: 0.15, shF: -0.9, elF: 0.6, shB: 1.1, elB: 0.6, lean: -0.12 };
+    }
+    if (!p.onGround) {
+      if (p.vy < 0) return { hipF: 1.0, kneeF: 1.5, hipB: -0.35, kneeB: 0.7, shF: 2.4, elF: 0.3, shB: -0.6, elB: 0.6, lean: 0.05 };
+      return { hipF: 0.35, kneeF: 0.4, hipB: -0.25, kneeB: 0.5, shF: 1.7, elF: 0.4, shB: -1.3, elB: 0.4, lean: 0 };
+    }
+    if (Math.abs(p.vx) > 0.4) return poseRun(p.anim * 2.4, Math.min(1, Math.abs(p.vx) / RUN));
+    const b = Math.sin(time * 3) * 0.6;
+    return { hipF: 0.1, kneeF: 0.12 + (p.land ? 0.8 : 0), hipB: -0.1, kneeB: 0.12 + (p.land ? 0.8 : 0), shF: 0.15, elF: 0.4, shB: -0.15, elB: 0.4, lean: 0.03, bob: b + (p.land ? 3 : 0) };
+  }
+
+  function drawPlayer(cx) {
+    const p = player, X = (p.x - cx) * S, Y = p.y * S, s = S / 40;
+    if (p.state !== "dead") { ctx.fillStyle = "rgba(20,5,25,0.3)"; const gy = groundBelow(p.x, p.y); const d = gy - p.y; ctx.beginPath(); ctx.ellipse(X, gy * S, S * 0.32 * Math.max(0.3, 1 - d / 5), S * 0.07, 0, 0, 7); ctx.fill(); }
+    ctx.save();
+    if (p.state === "dead") { ctx.globalAlpha = Math.max(0, p.deadT / 1.3); ctx.translate(X, Y); ctx.rotate(p.facing * 1.3 * Math.min(1, (1.3 - p.deadT) * 2)); ctx.translate(-X, -Y); }
+    drawGuy(X, Y, s, p.facing, playerPose(p), KIT_PLAYER);
+    ctx.restore();
+  }
+  function groundBelow(x, y) { for (let r = Math.floor(y); r < ROWS; r++) if (solid(Math.floor(x), r)) return r; for (const pl of platforms) if (x > pl.x && x < pl.x + pl.w && pl.y >= y - 0.05) return pl.y; return ROWS + 3; }
+
+  function drawDefenders(cx) {
+    for (const d of defenders) {
+      const X = (d.x - cx) * S, Y = d.y * S, s = S / 40;
+      ctx.fillStyle = "rgba(20,5,25,0.3)"; ctx.beginPath(); ctx.ellipse(X, Y, S * 0.3, S * 0.07, 0, 0, 7); ctx.fill();
+      const P = d.kick > 0 ? { hipF: 1.3, kneeF: 0.2, hipB: -0.1, kneeB: 0.1, shF: -0.8, elF: 0.6, shB: 1.0, elB: 0.6, lean: -0.15 } : poseRun(d.anim * 4, d.busy > 0 ? 0.2 : 0.6);
+      drawGuy(X, Y, s, d.busy > 0 ? (ball.x < d.x ? -1 : 1) : d.dir, P, KIT_DEF);
+    }
+  }
+  function drawKeeper(cx) {
+    if (!keeper) return;
+    const X = (keeper.x - cx) * S, Y = (keeper.y + keeper.h / 2) * S, s = S / 40;
+    const up = Math.cos(keeper.t * 1.9) * 0.3;
+    const P = keeper.dive > 0 ? { hipF: 0.6, kneeF: 0.2, hipB: -0.6, kneeB: 0.2, shF: 2.9, elF: 0, shB: 2.6, elB: 0, lean: -0.5 }
+      : { hipF: 0.35 - up, kneeF: 0.5, hipB: -0.35 + up, kneeB: 0.5, shF: 1.9 + up, elF: 0.3, shB: 1.6 - up, elB: 0.3, lean: -0.05 };
+    drawGuy(X, Y, s, -1, P, KIT_GK);
+  }
+
+  function drawBall(cx) {
+    for (const t of trail) { ctx.fillStyle = `rgba(255,240,200,${t.t * 1.6})`; ctx.beginPath(); ctx.arc((t.x - cx) * S, t.y * S, BALL_R * S * (0.4 + t.t * 2), 0, 7); ctx.fill(); }
+    const X = (ball.x - cx) * S, Y = ball.y * S, R = BALL_R * S;
+    const gy = groundBelow(ball.x, ball.y), d = gy - ball.y;
+    ctx.fillStyle = `rgba(20,5,25,${0.3 * Math.max(0.2, 1 - d / 6)})`; ctx.beginPath(); ctx.ellipse(X, gy * S, R * 0.9, R * 0.25, 0, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(X, Y);
+    ctx.fillStyle = "#1a1012"; ctx.beginPath(); ctx.arc(0, 0, R + 1.2, 0, 7); ctx.fill();
+    ctx.save(); ctx.rotate(ball.rot);
+    ctx.fillStyle = "#f8f6ee"; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fill();
+    ctx.fillStyle = "#1b1b22";
+    const pent = (x, y, r) => { ctx.beginPath(); for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.57; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.fill(); };
+    pent(0, 0, R * 0.36); pent(R * 0.86, 0, R * 0.24); pent(-R * 0.62, R * 0.62, R * 0.24); pent(-R * 0.62, -R * 0.62, R * 0.24);
+    ctx.restore();
+    const sh = ctx.createRadialGradient(-R * 0.35, -R * 0.4, R * 0.1, 0, 0, R);
+    sh.addColorStop(0, "rgba(255,255,255,0.5)"); sh.addColorStop(0.5, "rgba(255,255,255,0)"); sh.addColorStop(1, "rgba(60,20,40,0.35)");
+    ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAim(cx) {
+    const path = buildPath(aim), reach = aim.power * MAX_REACH;
+    const sx = x => (x - cx) * S, sy = y => y * S;
+    ctx.save();
+    ctx.lineWidth = Math.max(3, S * 0.09); ctx.lineCap = "round"; ctx.setLineDash([S * 0.25, S * 0.18]);
+    ctx.lineDashOffset = -time * S * 1.2;
+    ctx.strokeStyle = "rgba(255,210,63,0.95)"; ctx.beginPath();
+    for (const p of path.pts) { if (p.s > reach) break; ctx.lineTo(sx(p.x), sy(p.y)); }
+    ctx.stroke();
+    if (reach < path.len) {
+      ctx.strokeStyle = "rgba(239,91,76,0.85)"; ctx.setLineDash([S * 0.08, S * 0.18]); ctx.beginPath();
+      for (const p of path.pts) if (p.s >= reach - 0.3) ctx.lineTo(sx(p.x), sy(p.y));
+      ctx.stroke();
+      const q = pathAt(path, reach);
+      ctx.setLineDash([]); ctx.fillStyle = "#ef5b4c"; ctx.beginPath(); ctx.arc(sx(q.x), sy(q.y), S * 0.12, 0, 7); ctx.fill();
+    } else if (reach - path.len > 0.5) {
+      const e = pathAt(path, path.len), k = Math.min(3, (reach - path.len) * 0.5);
+      ctx.strokeStyle = "rgba(255,210,63,0.45)"; ctx.setLineDash([S * 0.08, S * 0.18]); ctx.beginPath();
+      ctx.moveTo(sx(e.x), sy(e.y)); ctx.lineTo(sx(e.x + e.tx * k), sy(e.y + e.ty * k)); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.strokeStyle = "rgba(251,243,228,0.25)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(sx(aim.p0.x), sy(aim.p0.y)); ctx.lineTo(sx(aim.p2.x), sy(aim.p2.y)); ctx.stroke();
+    const handle = (p, col, label) => {
+      ctx.fillStyle = col; ctx.strokeStyle = "#1d1838"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), Math.max(14, S * 0.32), 0, 7); ctx.fill(); ctx.stroke();
+      ctx.font = `700 ${Math.max(13, S * 0.3)}px "Barlow Condensed", sans-serif`; ctx.textAlign = "center";
+      ctx.fillStyle = "#fbf3e4"; ctx.fillText(label, sx(p.x), sy(p.y) - Math.max(20, S * 0.45));
+    };
+    handle(aim.h, "#5fd3f3", "curva"); handle(aim.p2, "#ffd23f", "alvo");
+    ctx.restore();
+  }
+
+  function draw() {
+    let cx = mode === "aim" && aim ? aim.camX : camX;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    drawBackground(cx);
+    if (shake > 0) { const m = shake * S * 0.25; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
+    // fundo do chão abaixo do mapa
+    ctx.fillStyle = "#45291a"; ctx.fillRect(-20, ROWS * S, W + 40, H - ROWS * S + 20);
+    drawGoal(cx, true);
+    ctx.drawImage(levelCv, cx * TS, 0, viewW * TS, ROWS * TS, 0, 0, W, ROWS * S);
+    drawDynamicTiles(cx);
+    drawKeeper(cx); drawDefenders(cx); drawPlayer(cx); drawBall(cx);
+    drawGoal(cx, false);
+    for (const p of particles) {
+      ctx.globalAlpha = Math.min(1, p.t * 2); ctx.fillStyle = p.col;
+      if (p.dust) { ctx.beginPath(); ctx.arc((p.x - cx) * S, p.y * S, (p.r || 0.1) * S * (1.6 - p.t), 0, 7); ctx.fill(); }
+      else if (p.sq || p.conf) { ctx.save(); ctx.translate((p.x - cx) * S, p.y * S); ctx.rotate(p.rot || 0); const w = (p.conf ? 0.14 : 0.3) * S, h = (p.conf ? 0.07 : 0.12) * S; ctx.fillRect(-w / 2, -h / 2, w, h); ctx.restore(); }
+      else { const sz = 0.1 * S; ctx.fillRect((p.x - cx) * S - sz / 2, p.y * S - sz / 2, sz, sz); }
+    }
+    ctx.globalAlpha = 1;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.drawImage(vigCv, 0, 0, W, H);
+    if (mode === "aim" && aim) drawAim(cx);
+  }
+
+  // ---------- Telas ----------
+  function renderMenu() {
+    $("levelList").innerHTML = LEVELS.map((l, i) => {
+      const b = best[i];
+      return `<button class="lvl${b ? " done" : ""}" data-i="${i}"><span class="n">${i + 1}</span><span class="t">${l.name}</span><span class="stars">${starHtml(b ? starsFor(b, l.par) : 0)}</span></button>`;
+    }).join("");
+    document.querySelectorAll(".lvl").forEach(b => b.addEventListener("click", () => startLevel(+b.dataset.i)));
+  }
+  function startLevel(i) { loadLevel(i); $("menu").hidden = true; $("win").hidden = true; mode = "play"; showIntro(); }
+  function showWin() {
+    const n = starsFor(kicks, L.par);
+    if (!best[levelIdx] || kicks < best[levelIdx]) { best[levelIdx] = kicks; saveBest(); }
+    $("winStars").innerHTML = starHtml(n);
+    $("winText").textContent = `${kicks} ${kicks === 1 ? "chute" : "chutes"} · par ${L.par}`;
+    $("bNext").textContent = levelIdx < LEVELS.length - 1 ? "Próxima fase" : "Voltar ao menu";
+    $("win").hidden = false;
+  }
+  $("bRetry").addEventListener("click", () => startLevel(levelIdx));
+  $("bNext").addEventListener("click", () => { if (levelIdx < LEVELS.length - 1) startLevel(levelIdx + 1); else { $("win").hidden = true; openMenu(); } });
+  $("btnRestart").addEventListener("click", () => { if (mode === "play" || mode === "aim") startLevel(levelIdx); });
+  $("btnMenu").addEventListener("click", openMenu);
+  function openMenu() { renderMenu(); $("menu").hidden = false; mode = "menu"; showAim(false); }
+  $("bFull").addEventListener("click", async () => {
+    try { await document.documentElement.requestFullscreen(); } catch (e) {}
+    try { await screen.orientation.lock("landscape"); } catch (e) {}
+  });
+
+  // ---------- Loop ----------
+  let last = performance.now(), acc = 0;
+  function frame(now) {
+    const realDt = Math.min(0.05, (now - last) / 1000); last = now; time += realDt;
+    if (slow < 1) slow = Math.min(1, slow + realDt * 0.6);
+    const dt = realDt * slow;
+    shake = Math.max(0, shake - realDt);
+    if (mode === "play" || mode === "won") {
+      acc += dt;
+      while (acc >= 1 / 60) {
+        const h = 1 / 60;
+        if (mode === "play") updatePlayer(h);
+        updateWorld(h); updateBall(h); acc -= h;
+      }
+      const target = clamp((ball.state === "flight" ? (player.x + ball.x) / 2 : player.x) - viewW / 2, 0, Math.max(0, cols - viewW));
+      camX += (target - camX) * Math.min(1, realDt * 6);
+    }
+    if (toastTimer > 0) { toastTimer -= realDt; if (toastTimer <= 0) $("toast").style.opacity = 0; }
+    if (introTimer > 0) { introTimer -= realDt; if (introTimer <= 0) $("intro").style.opacity = 0; }
+    const kb = $("bKick"); const ok = mode === "play" && canKick(); if (kb.disabled === ok) kb.disabled = !ok;
+    draw();
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  loadLevel(0); renderMenu();
+  requestAnimationFrame(frame);
+
+  window.__brazuca = { get state() { return { mode, player, ball, goal, gate, kicks, levelIdx, keeper, defenders, platforms, crumbles }; }, startLevel, startAim, shoot, get aim() { return aim; }, keys, LEVELS };
+})();
+</script>
+
+</body>
+</html>
