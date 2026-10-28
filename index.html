@@ -1721,7 +1721,9 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     if (shake > 0) { const m = shake * S * 0.25; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
     ctx.fillStyle = theme().ground; ctx.fillRect(-20, ROWS * S, W + 40, H - ROWS * S + 20);
     drawGoal(cx, true);
-    ctx.drawImage(levelCv, cx * TS, 0, viewW * TS, ROWS * TS, 0, 0, W, ROWS * S);
+    // recorta a origem dentro do mapa: com origem fora da imagem, o Safari estica o cenário e desalinha os muros
+    const lx0 = Math.max(0, cx), lx1 = Math.min(cols, cx + viewW);
+    if (lx1 > lx0) ctx.drawImage(levelCv, lx0 * TS, 0, (lx1 - lx0) * TS, ROWS * TS, (lx0 - cx) * S, 0, (lx1 - lx0) * S, ROWS * S);
     drawDynamicTiles(cx);
     drawKeeper(cx, dt); drawDefenders(cx, dt); drawPlayer(cx, dt); drawBall(cx);
     drawGoal(cx, false);
