@@ -490,7 +490,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     { name: "Morro", theme: "night", rooms: true, levels: LEVELS2 },
   ];
   const MODES = {
-    normal: { label: "Normal", info: "A linha da mira mostra só o começo do chute. Rivais mais rápidos e portões que fecham mais cedo.", preview: 0.28, enemy: 1.3, hold: 3.5 },
+    normal: { label: "Normal", info: "A mira mostra a curva, mas não mostra até onde a força leva a bola. Rivais mais rápidos e portões que fecham mais cedo.", preview: 0.28, enemy: 1.3, hold: 3.5 },
     kids: { label: "Kids", info: "A linha da mira mostra o chute inteiro e até onde a força alcança. Rivais mais lentos.", preview: 1, enemy: 0.85, hold: 5 },
   };
 
@@ -1676,8 +1676,14 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
         ctx.moveTo(sx(e.x), sy(e.y)); ctx.lineTo(sx(e.x + e.tx * k), sy(e.y + e.ty * k)); ctx.stroke();
       }
     }
+    // no Normal, o resto da curva aparece fininho (passa pelo ponto azul e chega no alvo); a força não é mostrada
+    if (prev < 1) {
+      ctx.setLineDash([S * 0.06, S * 0.2]); ctx.lineDashOffset = 0;
+      ctx.strokeStyle = "rgba(251,243,228,0.55)"; ctx.lineWidth = Math.max(2, S * 0.05); ctx.beginPath();
+      for (const p of path.pts) if (p.s >= shown - 0.2) ctx.lineTo(sx(p.x), sy(p.y));
+      ctx.stroke();
+    }
     ctx.setLineDash([]);
-    ctx.strokeStyle = "rgba(251,243,228,0.25)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(sx(aim.p0.x), sy(aim.p0.y)); ctx.lineTo(sx(aim.p2.x), sy(aim.p2.y)); ctx.stroke();
     const handle = (p, col, label) => {
       ctx.fillStyle = col; ctx.strokeStyle = "#1d1838"; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), Math.max(14, S * 0.32), 0, 7); ctx.fill(); ctx.stroke();
