@@ -149,6 +149,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 .result .stars { font-size: 40px; color: var(--shirt); letter-spacing: 6px; }
 .result .stars .off { color: rgba(251,243,228,0.2); }
 .center { justify-content: center; }
+.win-new { font-size: 18px; color: var(--shirt); font-weight: 700; }
 .opt { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; }
 .opt .modeinfo { font-weight: 600; }
 .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -156,6 +157,15 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 .sw[aria-pressed="true"] { border-color: var(--shirt); box-shadow: 0 0 0 2px var(--night) inset; }
 .sw.kit { border-radius: 10px; width: 52px; }
 #custom { background: #14102a; }
+.craques { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; }
+.cq { display: grid; gap: 1px; text-align: left; border: 2px solid transparent; border-radius: 10px; padding: 6px 9px; background: rgba(251,243,228,0.08); color: var(--ink); min-width: 0; }
+.cq .nm { font-family: var(--display); font-size: 18px; color: var(--shirt); line-height: 1; }
+.cq .rq { font-size: 12px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cq[aria-pressed="true"] { border-color: var(--shirt); }
+.cq:disabled { opacity: 0.45; }
+.cq:disabled .nm { color: var(--ink-dim); }
+#craqueInfo .dim { opacity: 0.7; }
+#lookOpts .seg { flex-wrap: wrap; }
 .custom-wrap { display: grid; grid-template-columns: 150px 1fr; gap: 16px; align-items: center; }
 #lookPreview { width: 150px; height: 190px; background: rgba(251,243,228,0.06); border-radius: 14px; }
 @media (max-height: 420px) { .custom-wrap { grid-template-columns: 110px 1fr; } #lookPreview { width: 110px; height: 150px; } }
@@ -211,7 +221,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       </div>
     </div>
     <div class="modeinfo" id="modeInfo"></div>
-    <div class="row"><span class="modeinfo">Personagem</span><div class="seg" id="charSeg" role="group" aria-label="Personagem"><button id="cNew" aria-pressed="true">Novo</button><button id="cOld" aria-pressed="false">Original</button></div><button class="btn gold" id="bLook" style="padding:8px 14px;font-size:16px">Personalizar</button><span class="modeinfo">Força</span><div class="seg" id="powSeg" role="group" aria-label="Controle da força"><button id="pBar" aria-pressed="true">Barra</button><button id="pHold" aria-pressed="false">Segurar</button></div></div>
+    <div class="row"><span class="modeinfo">Personagem</span><div class="seg" id="charSeg" role="group" aria-label="Personagem"><button id="cNew" aria-pressed="true">Novo</button><button id="cOld" aria-pressed="false">Original</button></div><button class="btn gold" id="bLook" style="padding:8px 14px;font-size:16px">Craques</button><span class="modeinfo">Força</span><div class="seg" id="powSeg" role="group" aria-label="Controle da força"><button id="pBar" aria-pressed="true">Barra</button><button id="pHold" aria-pressed="false">Segurar</button></div></div>
     <div class="modeinfo" id="powInfo" hidden></div>
     <div class="seg worlds" id="worldSeg" role="group" aria-label="Mundo"></div>
     <div class="levels" id="levelList"></div>
@@ -224,7 +234,11 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     <div class="head"><div class="logo" style="font-size:clamp(28px,5vw,44px)">Seu jogador</div><div class="row"><button class="btn" id="bLookReset">Padrão</button><button class="btn primary" id="bLookOk">Pronto</button></div></div>
     <div class="custom-wrap">
       <canvas id="lookPreview"></canvas>
-      <div style="display:grid;gap:10px" id="lookOpts"></div>
+      <div style="display:grid;gap:10px;min-width:0">
+        <div class="craques" id="craqueList" role="group" aria-label="Craque"></div>
+        <div class="modeinfo" id="craqueInfo"></div>
+        <div style="display:grid;gap:10px" id="lookOpts"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -235,6 +249,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     <div class="result">
       <div class="stars" id="winStars"></div>
       <div id="winText"></div>
+      <div id="winNew" class="win-new" hidden></div>
     </div>
     <div class="row center">
       <button class="btn" id="bRetry">Repetir</button>
@@ -1249,7 +1264,8 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       mode = "won"; haptic([60, 40, 60, 40, 160]); shake = 0.5; slow = 0.25; netBulge = 1;
       for (let i = 0; i < 60; i++) particles.push({ x: ball.x, y: ball.y, vx: (Math.random() - 0.75) * 14, vy: (Math.random() - 0.85) * 14, t: 1.6, col: ["#f7d117", "#1f9d55", "#2a5bd7", "#fbf3e4"][i % 4], conf: true, rot: Math.random() * 6 });
       ball.vx = Math.max(ball.vx, 3) * 0.4; ball.vy *= 0.2; ball.state = "free";
-      setTimeout(showWin, 1300);
+      player.celebT0 = time; player.idleT = 0; player.idleAct = null;
+      setTimeout(showWin, 2300);
       return true;
     }
     return false;
@@ -1723,7 +1739,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 
   // ---------- Personagens: esqueleto com proporções humanas ----------
   // Ângulos em radianos a partir da vertical, positivos para frente. 40 unidades = 1 bloco.
-  const BODY = { thigh: 13.5, shin: 13.5, foot: 5.6, torso: 18, neck: 3, head: 4.6, upper: 9.5, fore: 8.8 };
+  const BODY = { thigh: 13.5, shin: 13.5, foot: 5.6, torso: 18, neck: 3, head: 5.9, upper: 9.5, fore: 8.8 };
   function shade(hex, k) {
     const n = parseInt(hex.slice(1), 7 > hex.length ? 16 : 16); let r = n >> 16, g = n >> 8 & 255, b = n & 255;
     const f = 1 + k; return `rgb(${clamp(Math.round(r * f), 0, 255)},${clamp(Math.round(g * f), 0, 255)},${clamp(Math.round(b * f), 0, 255)})`;
@@ -1744,7 +1760,46 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     verde: { shirt: "#1f9d55", trim: "#f7d117", shorts: "#f4f1ea", sock: "#1f9d55" },
     rosa: { shirt: "#ff6fa8", trim: "#1d1838", shorts: "#1d1838", sock: "#ff6fa8" },
   };
+  // Craques fictícios: cada um traz visual, físico e comemoração. Liberados por estrelas e por mundo concluído.
+  const CRAQUES = [
+    { id: "brazuca", name: "Brazuca", vibe: "O craque da várzea", look: { skin: "#8d5a3b", style: "curly", hair: "#15100e", band: "#1f9d55", kit: "brasil" }, w: 1, h: 1, celeb: "wave", celebName: "Acena para a torcida" },
+    { id: "gingado", name: "Gingado", vibe: "Drible e alegria", look: { skin: "#5e3a24", style: "long", hair: "#15100e", band: "#f7d117", kit: "verde" }, w: 1, h: 1.02, celeb: "dance", celebName: "Samba", need: { stars: 8 } },
+    { id: "maestro", name: "Maestro", vibe: "Elegância e passe", look: { skin: "#e0ac80", style: "neat", hair: "#5a3420", band: "", kit: "branco" }, w: 0.95, h: 1.06, celeb: "sky", celebName: "Ajoelha e aponta o céu", need: { world: 0 } },
+    { id: "moleque", name: "Moleque", vibe: "Ousadia e firula", look: { skin: "#b97a52", style: "mohawk", hair: "#e8cf7a", band: "", kit: "azul" }, w: 0.9, h: 1, celeb: "slide", celebName: "Carrinho de joelhos", need: { stars: 20 } },
+    { id: "tanque", name: "Tanque", vibe: "Força e arrancada", look: { skin: "#b97a52", style: "shaved", hair: "#15100e", band: "", kit: "vermelho" }, w: 1.15, h: 1, celeb: "plane", celebName: "Aviãozinho", need: { world: 1 } },
+    { id: "classico", name: "Clássico", vibe: "O futebol de antigamente", look: { skin: "#5e3a24", style: "crop", hair: "#15100e", band: "", kit: "brasil" }, w: 1, h: 1, celeb: "punch", celebName: "Soco no ar", need: { stars: 35 } },
+    { id: "joia", name: "Joia", vibe: "Menino prodígio", look: { skin: "#8d5a3b", style: "tuft", hair: "#15100e", band: "", kit: "rosa" }, w: 0.92, h: 0.92, celeb: "hop", celebName: "Pulinhos", need: { world: 2, stars: 50 } },
+  ];
   const LOOK_DEFAULT = { skin: "#8d5a3b", style: "curly", hair: "#15100e", band: "#1f9d55", kit: "brasil" };
+  KITS.vermelho = KITS.vermelho || { shirt: "#c8242b", trim: "#fbf3e4", shorts: "#16161a", sock: "#c8242b" };
+  if (!LOOK_OPTS.kit.items.includes("vermelho")) LOOK_OPTS.kit.items.push("vermelho");
+  const BASE_STYLES = LOOK_OPTS.style.items.slice();
+  Object.assign(LOOK_OPTS.style.names, { neat: "Social", long: "Longo", shaved: "Raspado", crop: "Baixinho", tuft: "Topete" });
+  // progresso: estrelas somadas (melhor resultado entre Normal e Kids) e mundos concluídos
+  function progress() {
+    let stars = 0; const done = [];
+    WORLDS.forEach((w, wi) => {
+      let all = true;
+      w.levels.forEach((l, i) => {
+        const k = Math.min(...["normal", "kids"].map(m => best[`${m}:${wi}:${i}`] || Infinity));
+        if (k === Infinity) all = false; else stars += starsFor(k, l.par);
+      });
+      done.push(all);
+    });
+    return { stars, done };
+  }
+  const ALL_CRAQUES = /craques/.test(location.hash);
+  function isUnlocked(c, pr = progress()) {
+    if (!c.need || ALL_CRAQUES) return true;
+    if (c.need.world !== undefined && WORLDS[c.need.world]) return pr.done[c.need.world];
+    return pr.stars >= c.need.stars;
+  }
+  function needText(c) {
+    return c.need.world !== undefined && WORLDS[c.need.world] ? `Termine o Mundo ${c.need.world + 1}` : `${c.need.stars} estrelas`;
+  }
+  let craqueId = "brazuca";
+  try { craqueId = localStorage.getItem("brazuca-craque") || "brazuca"; } catch (e) {}
+  const craque = () => { const c = CRAQUES.find(c => c.id === craqueId); return c && isUnlocked(c) ? c : CRAQUES[0]; };
   let look = { ...LOOK_DEFAULT };
   try { look = { ...LOOK_DEFAULT, ...JSON.parse(localStorage.getItem("brazuca-look") || "{}") }; } catch (e) {}
   const KIT_PLAYER = kitOf({ shirt: "#f7d117", sleeve: "#f7d117", trim: "#1f9d55", shorts: "#1d4fbf", sock: "#f4f1ea", shoe: "#16161a", skin: "#8d5a3b", hair: "#15100e", band: "#1f9d55", lip: "#6e4128", style: "curly" });
@@ -1771,7 +1826,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   function drawHumanoid(X, Y, s, f, P, kit, grounded) {
     const B = BODY;
     const lf = legJoints(P.hipF, P.kneeF, P.ftF || 0, f), lb = legJoints(P.hipB, P.kneeB, P.ftB || 0, f);
-    let low = Math.max(lf.an.y + 1.8, lf.toe.y + 1, lb.an.y + 1.8, lb.toe.y + 1);
+    let low = Math.max(lf.an.y + 1.8, lf.toe.y + 1, lb.an.y + 1.8, lb.toe.y + 1, lf.k.y + 2.4, lb.k.y + 2.4);
     if (!grounded) low = 28.5;
     const hx = X, hy = Y - low * s + (P.dy || 0) * s;
     const J = p => [hx + p.x * s, hy + p.y * s];
@@ -1821,6 +1876,48 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     drawLeg(lf, false);
     drawArm(af, false);
   }
+  // Expressões: neutral, focus (mirando), happy (gol), scared (beira do buraco, queda), hurt (caiu)
+  function drawFace(r, kit) {
+    const ex = kit.expr || "neutral", eX = r * 0.55, eY = -r * 0.06;
+    const closed = ex === "happy" || ex === "hurt" || (kit.blink && ex !== "scared");
+    ctx.lineCap = "round";
+    ctx.fillStyle = "rgba(255,90,90,0.16)"; ctx.beginPath(); ctx.ellipse(r * 0.55, r * 0.42, r * 0.2, r * 0.13, 0, 0, 7); ctx.fill();
+    if (closed) {
+      ctx.strokeStyle = OUT; ctx.lineWidth = r * 0.14; ctx.beginPath();
+      if (ex === "happy") ctx.arc(eX, eY + r * 0.06, r * 0.17, Math.PI * 1.1, Math.PI * 1.9);
+      else if (ex === "hurt") { ctx.moveTo(eX - r * 0.18, eY - r * 0.12); ctx.lineTo(eX + r * 0.12, eY); ctx.lineTo(eX - r * 0.18, eY + r * 0.12); }
+      else { ctx.moveTo(eX - r * 0.18, eY + r * 0.04); ctx.lineTo(eX + r * 0.18, eY + r * 0.04); }
+      ctx.stroke();
+    } else {
+      const eh = ex === "focus" ? r * 0.13 : ex === "scared" ? r * 0.3 : r * 0.24;
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(eX, eY, r * 0.19, eh, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = OUT; ctx.lineWidth = r * 0.08; ctx.stroke();
+      ctx.fillStyle = "#24160f"; ctx.beginPath(); ctx.ellipse(eX + r * 0.08, eY, ex === "scared" ? r * 0.06 : r * 0.1, Math.min(eh, r * 0.14), 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(eX + r * 0.11, eY - r * 0.05, r * 0.035, 0, 7); ctx.fill();
+    }
+    // sobrancelha
+    ctx.strokeStyle = kit.style === "bald" || kit.style === "shaved" ? shade(kit.skin, -0.45) : kit.hair; ctx.lineWidth = r * 0.17; ctx.beginPath();
+    if (ex === "focus" || ex === "hurt") { ctx.moveTo(r * 0.32, -r * 0.42); ctx.lineTo(r * 0.82, -r * 0.24); }
+    else if (ex === "scared") { ctx.moveTo(r * 0.34, -r * 0.48); ctx.quadraticCurveTo(r * 0.6, -r * 0.66, r * 0.82, -r * 0.5); }
+    else if (ex === "happy") { ctx.moveTo(r * 0.34, -r * 0.42); ctx.quadraticCurveTo(r * 0.6, -r * 0.56, r * 0.82, -r * 0.4); }
+    else { ctx.moveTo(r * 0.34, -r * 0.4); ctx.lineTo(r * 0.82, -r * 0.4); }
+    ctx.stroke();
+    // boca
+    ctx.strokeStyle = kit.lip; ctx.lineWidth = r * 0.12;
+    if (ex === "happy") {
+      ctx.fillStyle = "#5b1d1d"; ctx.beginPath(); ctx.moveTo(r * 0.5, r * 0.55); ctx.quadraticCurveTo(r * 0.95, r * 0.52, r * 0.98, r * 0.5); ctx.quadraticCurveTo(r * 0.85, r * 0.95, r * 0.55, r * 0.72); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(r * 0.55, r * 0.56); ctx.lineTo(r * 0.95, r * 0.52); ctx.lineTo(r * 0.9, r * 0.62); ctx.lineTo(r * 0.6, r * 0.64); ctx.closePath(); ctx.fill();
+    } else if (ex === "scared") {
+      ctx.fillStyle = "#5b1d1d"; ctx.beginPath(); ctx.ellipse(r * 0.8, r * 0.68, r * 0.08, r * 0.12, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(140,200,255,0.95)"; ctx.beginPath(); ctx.moveTo(-r * 0.05, -r * 0.9); ctx.quadraticCurveTo(-r * 0.25, -r * 0.6, -r * 0.05, -r * 0.55); ctx.quadraticCurveTo(r * 0.12, -r * 0.6, -r * 0.05, -r * 0.9); ctx.fill();
+    } else if (ex === "hurt") {
+      ctx.beginPath(); ctx.moveTo(r * 0.58, r * 0.7); ctx.lineTo(r * 0.68, r * 0.62); ctx.lineTo(r * 0.78, r * 0.7); ctx.lineTo(r * 0.9, r * 0.62); ctx.stroke();
+    } else if (ex === "focus") {
+      ctx.beginPath(); ctx.moveTo(r * 0.6, r * 0.7); ctx.lineTo(r * 0.9, r * 0.66); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(r * 0.58, r * 0.64); ctx.quadraticCurveTo(r * 0.78, r * 0.76, r * 0.94, r * 0.6); ctx.stroke();
+    }
+  }
   function drawHead(x, y, s, f, tilt, kit) {
     const r = BODY.head * s;
     ctx.save(); ctx.translate(x, y); ctx.rotate(tilt * f); ctx.scale(f, 1);
@@ -1831,9 +1928,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     ctx.beginPath(); ctx.moveTo(r * 0.92, -r * 0.15); ctx.lineTo(r * 1.28, r * 0.22); ctx.lineTo(r * 0.9, r * 0.32); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = OUT; ctx.lineWidth = Math.max(0.8, 0.5 * s); ctx.beginPath(); ctx.moveTo(r * 1.28, r * 0.22); ctx.lineTo(r * 0.92, r * 0.32); ctx.stroke();
     ctx.fillStyle = shade(kit.skin, -0.2); ctx.beginPath(); ctx.ellipse(-r * 0.2, r * 0.12, r * 0.22, r * 0.3, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = OUT; ctx.beginPath(); ctx.ellipse(r * 0.55, -r * 0.08, r * 0.11, r * 0.15, 0, 0, 7); ctx.fill();
-    ctx.lineWidth = Math.max(1, 0.7 * s); ctx.beginPath(); ctx.moveTo(r * 0.35, -r * 0.35); ctx.lineTo(r * 0.85, -r * 0.3); ctx.stroke();
-    ctx.strokeStyle = kit.lip; ctx.beginPath(); ctx.moveTo(r * 0.6, r * 0.7); ctx.lineTo(r * 0.9, r * 0.66); ctx.stroke();
+    drawFace(r, kit);
     // cabelo
     ctx.fillStyle = kit.hair;
     if (kit.style === "curly") {
@@ -1845,6 +1940,22 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       ctx.beginPath(); ctx.ellipse(-r * 0.1, -r * 0.75, r * 0.75, r * 0.42, -0.1, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
       for (let i = 0; i < 5; i++) { const a = -2.6 + i * 0.32; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.85); ctx.lineTo(Math.cos(a + 0.1) * r * 1.45, Math.sin(a + 0.1) * r * 1.45); ctx.lineTo(Math.cos(a + 0.32) * r * 0.75, Math.sin(a + 0.32) * r * 0.85); ctx.fill(); }
       ctx.fillStyle = shade(kit.skin, -0.12); ctx.beginPath(); ctx.ellipse(-r * 0.55, -r * 0.05, r * 0.38, r * 0.5, 0, 0, 7); ctx.fill();
+    } else if (kit.style === "neat") {
+      ctx.beginPath(); ctx.ellipse(-r * 0.1, -r * 0.42, r * 1.0, r * 0.66, -0.12, Math.PI * 0.98, Math.PI * 2.04); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-r * 0.62, -r * 0.1, r * 0.42, r * 0.5, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(r * 0.1, -r * 1.02); ctx.quadraticCurveTo(r * 0.9, -r * 0.95, r * 0.95, -r * 0.5); ctx.lineTo(r * 0.5, -r * 0.62); ctx.fill();
+    } else if (kit.style === "long") {
+      for (const [hx, hy, hr] of [[-0.4, -0.85, 0.5], [0.15, -0.95, 0.48], [0.6, -0.78, 0.38], [-0.9, -0.35, 0.45], [-1.05, 0.15, 0.42], [-1.0, 0.6, 0.4], [-0.8, 1.0, 0.36], [-0.5, 1.15, 0.3], [-0.2, -0.55, 0.5]]) { ctx.beginPath(); ctx.arc(hx * r, hy * r, hr * r, 0, 7); ctx.fill(); }
+    } else if (kit.style === "shaved") {
+      ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.ellipse(-r * 0.12, -r * 0.4, r * 0.95, r * 0.65, -0.1, Math.PI * 0.95, Math.PI * 2.02); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(255,255,255,0.16)"; ctx.beginPath(); ctx.ellipse(-r * 0.1, -r * 0.7, r * 0.45, r * 0.2, -0.3, 0, 7); ctx.fill();
+    } else if (kit.style === "crop") {
+      ctx.beginPath(); ctx.ellipse(-r * 0.08, -r * 0.5, r * 1.04, r * 0.7, -0.1, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-r * 0.6, -r * 0.08, r * 0.45, r * 0.52, 0, 0, 7); ctx.fill();
+    } else if (kit.style === "tuft") {
+      ctx.beginPath(); ctx.ellipse(-r * 0.12, -r * 0.42, r * 0.98, r * 0.6, -0.1, Math.PI * 0.95, Math.PI * 2.03); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-r * 0.62, -r * 0.08, r * 0.4, r * 0.48, 0, 0, 7); ctx.fill();
+      for (const [hx, hy, hr] of [[-0.2, -1.0, 0.3], [0.2, -1.05, 0.3], [0.55, -0.88, 0.26], [-0.55, -0.9, 0.28]]) { ctx.beginPath(); ctx.arc(hx * r, hy * r, hr * r, 0, 7); ctx.fill(); }
     } else {
       ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.beginPath(); ctx.ellipse(-r * 0.1, -r * 0.6, r * 0.5, r * 0.25, -0.3, 0, 7); ctx.fill();
     }
@@ -1946,6 +2057,44 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     const b = Math.sin(t * 2.2) * 0.03, look = Math.sin(t * 0.45) > 0.85 ? -0.25 : 0;
     return { hipF: 0.12, kneeF: 0.12, ftF: 0, hipB: -0.1, kneeB: 0.1, ftB: 0, shF: 0.12 + b, elF: 0.35, shB: -0.1 - b, elB: 0.3, lean: 0.03 + b, head: look, dy: breath };
   }
+  function celebPose(type, t) {
+    const u = t * 1.4;
+    switch (type) {
+      case "punch": { const j = Math.abs(Math.sin(u * 2.2)); return { hipF: 0.2 + 0.9 * j, kneeF: 0.3 + 1.2 * j, ftF: 0.3, hipB: 0.1 + 0.4 * j, kneeB: 0.3 + 1.0 * j, ftB: 0.3, shF: 3.0, elF: 0.15, shB: -0.4, elB: 1.2, lean: -0.08, head: -0.35, dy: -11 * j }; }
+      case "hop": { const j = Math.abs(Math.sin(u * 3.4)); return { hipF: 0.2 + 0.5 * j, kneeF: 0.3 + 0.8 * j, ftF: 0.3, hipB: 0.1 + 0.3 * j, kneeB: 0.3 + 0.7 * j, ftB: 0.3, shF: 2.8, elF: 0.2, shB: 2.6, elB: 0.25, lean: -0.05, head: -0.3, dy: -7 * j }; }
+      case "plane": { const r = Math.sin(u * 5); return { hipF: 0.2 + 0.6 * r, kneeF: 0.5 + 0.6 * Math.max(0, -r), ftF: 0.3, hipB: 0.2 - 0.6 * r, kneeB: 0.5 + 0.6 * Math.max(0, r), ftB: 0.3, shF: 1.55, elF: 0.05, shB: -1.55, elB: -0.05, lean: 0.28, head: -0.15, dy: -1.5 * Math.abs(r) }; }
+      case "dance": { const r = Math.sin(u * 4.5); return { hipF: 0.25 + 0.35 * r, kneeF: 0.6 + 0.3 * r, hipB: 0.05 - 0.35 * r, kneeB: 0.6 - 0.3 * r, shF: 1.0 + 1.3 * Math.max(0, r), elF: 1.2, shB: 1.0 + 1.3 * Math.max(0, -r), elB: 1.2, lean: 0.06 * r, head: 0.1 * r, dy: 2 * Math.abs(r) }; }
+      case "sky": { const r = Math.sin(u * 1.5) * 0.08; return { hipF: 1.45, kneeF: 1.5, hipB: 0.25, kneeB: 1.95, ftB: 0.6, shF: 2.75 + r, elF: 0.1, shB: 2.55 - r, elB: 0.15, lean: -0.12, head: -0.55 }; }
+      case "slide": { const r = Math.sin(u * 2) * 0.1; return { hipF: 0.15, kneeF: 1.7, ftF: 0.6, hipB: 0.05, kneeB: 1.75, ftB: 0.6, shF: 2.0 + r, elF: 0.2, shB: -2.0 - r, elB: -0.2, lean: -0.4, head: -0.45 }; }
+      default: { const w = Math.sin(u * 8); return { hipF: 0.12, kneeF: 0.15, hipB: -0.1, kneeB: 0.12, shF: 2.7 + 0.25 * w, elF: 0.35 + 0.3 * w, shB: -0.2, elB: 0.5, lean: -0.04, head: -0.2, dy: -1.5 * Math.abs(Math.sin(u * 4)) }; }
+    }
+  }
+  // parado por 3 s: embaixadinha (com a bola no pé) ou ajeitar o meião, chamar a torcida, olhar o gol
+  const IDLE_ACTS = ["sock", "cheer", "look"];
+  function idleAct(p) {
+    if (p.idleT < 3) return null;
+    if (ball.state === "held") return "juggle";
+    return IDLE_ACTS[Math.floor((p.idleT - 3) / 3.2) % IDLE_ACTS.length];
+  }
+  function idlePose(act, t) {
+    if (act === "juggle") { const ph = (t * 1.6) % 1, k = Math.max(0, 1 - ph * 6) + Math.max(0, 1 - (1 - ph) * 6); return { hipF: 0.15 + 0.9 * k, kneeF: 0.2 + 0.55 * k, ftF: 0.4 * k, hipB: -0.1, kneeB: 0.15, shF: 0.6, elF: 0.6, shB: -0.5, elB: 0.5, lean: -0.05, head: 0.35 }; }
+    if (act === "sock") { const k = Math.min(1, (t % 3.2) * 3) * Math.min(1, (3.2 - t % 3.2) * 3); return { hipF: 0.12 + 0.4 * k, kneeF: 0.12 + 0.5 * k, hipB: -0.1, kneeB: 0.1 + 0.1 * k, shF: 0.15 + 0.9 * k, elF: 0.35 - 0.1 * k, shB: -0.1 + 0.8 * k, elB: 0.3, lean: 0.03 + 0.85 * k, head: 0.3 * k }; }
+    if (act === "cheer") { const w = Math.sin(t * 6); return { hipF: 0.12, kneeF: 0.15, hipB: -0.1, kneeB: 0.12, shF: 2.3 + 0.35 * w, elF: 1.0, shB: 2.1 - 0.35 * w, elB: 1.0, lean: -0.05, head: -0.2, dy: -1 * Math.abs(w) }; }
+    return { hipF: 0.12, kneeF: 0.12, hipB: -0.1, kneeB: 0.1, shF: 2.65, elF: 2.25, shB: -0.1, elB: 0.3, lean: 0.06, head: -0.1 };
+  }
+  function playerExpr(p) {
+    if (mode === "won") return "happy";
+    if (p.state === "dead") return "hurt";
+    if (mode === "aim" || p.kickT > 0) return "focus";
+    if (p.state === "normal" && !p.onGround && p.vy > 6) return "scared";
+    if (p.state === "normal" && p.onGround && Math.abs(p.vx) < 2) {
+      const ax = p.x + p.facing * (p.w / 2 + 0.3);
+      if (groundBelow(ax, p.y) - p.y > 2.5) return "scared";
+    }
+    if (p.idleAct === "juggle" || p.idleAct === "look") return "focus";
+    if (p.idleAct === "cheer") return "happy";
+    return "neutral";
+  }
   function kickPose(k) {
     // apoio, recuo da perna, golpe e acompanhamento
     const K = [
@@ -1960,6 +2109,8 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     return out;
   }
   function playerPose(p) {
+    if (mode === "won" && p.state === "normal") return celebPose(craque().celeb, time - (p.celebT0 || 0));
+    if (p.idleAct) return idlePose(p.idleAct, p.idleT - 3);
     if (p.state === "dead") return { hipF: 1.2, kneeF: 1.6, hipB: 0.9, kneeB: 1.5, shF: 1.8, elF: 0.5, shB: 1.4, elB: 0.5, lean: 0.9, head: 0.4 };
     if (p.state === "climb") {
       const t = p.climb.t;
@@ -1988,11 +2139,15 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       ctx.restore();
       return;
     }
-    const fast = p.state === "climb" || p.kickT > 0 ? 28 : 16;
+    const still = mode === "play" && p.state === "normal" && p.onGround && Math.abs(p.vx) < 0.2 && p.kickT <= 0;
+    p.idleT = still ? (p.idleT || 0) + dt : 0; p.idleAct = idleAct(p);
+    const fast = p.state === "climb" || p.kickT > 0 || p.idleAct === "juggle" || mode === "won" ? 28 : 16;
     blendPose(p.pose, playerPose(p), Math.min(1, dt * fast));
+    KIT_PLAYER.expr = playerExpr(p); KIT_PLAYER.blink = time % 3.7 < 0.13;
     if (p.state !== "dead") { ctx.fillStyle = "rgba(10,5,25,0.3)"; const gy = groundBelow(p.x, p.y); const d = gy - p.y; ctx.beginPath(); ctx.ellipse(X, gy * S, S * 0.32 * Math.max(0.3, 1 - d / 5), S * 0.07, 0, 0, 7); ctx.fill(); }
     ctx.save();
     if (p.state === "dead") { ctx.globalAlpha = Math.max(0, p.deadT / 1.4); }
+    const cq = craque(); ctx.translate(X, Y); ctx.scale(cq.w, cq.h); ctx.translate(-X, -Y);
     drawHumanoid(X, Y, s, p.facing, p.pose, KIT_PLAYER, p.state === "normal" ? p.onGround : p.state === "dead");
     ctx.restore();
   }
@@ -2016,6 +2171,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(12 * s, -25 * s); ctx.lineTo(10 * s, -18 * s); ctx.lineTo(14 * s, -21 * s); ctx.fill();
     ctx.restore();
   }
+  KIT_DEF.expr = "focus"; KIT_GK.expr = "focus";
   function drawDefenders(cx, dt) {
     for (const d of defenders) {
       const X = (d.x - cx) * S, Y = d.y * S, s = S / 40;
@@ -2044,8 +2200,10 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 
   function drawBall(cx) {
     for (const t of trail) { ctx.fillStyle = `rgba(255,240,200,${t.t * 1.6})`; ctx.beginPath(); ctx.arc((t.x - cx) * S, t.y * S, BALL_R * S * (0.4 + t.t * 2), 0, 7); ctx.fill(); }
-    const X = (ball.x - cx) * S, Y = ball.y * S, R = BALL_R * S;
-    const gy = groundBelow(ball.x, ball.y), d = gy - ball.y;
+    let jy = 0;
+    if (ball.state === "held" && player.idleAct === "juggle" && charStyle !== "classic") { const ph = ((player.idleT - 3) * 1.6) % 1; jy = -4 * ph * (1 - ph) * 1.0 - 0.15; }
+    const X = (ball.x - cx) * S, Y = (ball.y + jy) * S, R = BALL_R * S;
+    const gy = groundBelow(ball.x, ball.y), d = gy - ball.y - jy;
     ctx.fillStyle = `rgba(10,5,25,${0.3 * Math.max(0.2, 1 - d / 6)})`; ctx.beginPath(); ctx.ellipse(X, gy * S, R * 0.9, R * 0.25, 0, 0, 7); ctx.fill();
     ctx.save(); ctx.translate(X, Y);
     ctx.fillStyle = OUT; ctx.beginPath(); ctx.arc(0, 0, R + 1.2, 0, 7); ctx.fill();
@@ -2186,6 +2344,17 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 
   // tela de personalização
   function renderLook() {
+    const pr = progress(), styles = BASE_STYLES.concat(CRAQUES.filter(c => isUnlocked(c, pr)).map(c => c.look.style).filter(s => !BASE_STYLES.includes(s)));
+    LOOK_OPTS.style.items = [...new Set(styles)];
+    const cur = craque();
+    $("craqueInfo").innerHTML = `<b>${cur.name}</b> · ${cur.vibe} · comemora: ${cur.celebName}<br><span class="dim">${pr.stars} estrelas</span>`;
+    $("craqueList").innerHTML = CRAQUES.map(c => { const ok = isUnlocked(c, pr);
+      return `<button class="cq" data-c="${c.id}" aria-pressed="${c.id === cur.id}" ${ok ? "" : "disabled"}><span class="nm">${c.name}</span><span class="rq">${ok ? c.vibe : needText(c)}</span></button>`; }).join("");
+    document.querySelectorAll("#craqueList button").forEach(b => b.addEventListener("click", () => {
+      const c = CRAQUES.find(c => c.id === b.dataset.c); craqueId = c.id; Object.assign(look, c.look);
+      try { localStorage.setItem("brazuca-craque", c.id); } catch (e) {}
+      saveLook(); renderLook(); previewT0 = time;
+    }));
     $("lookOpts").innerHTML = Object.entries(LOOK_OPTS).map(([key, o]) => `<div class="opt"><span class="modeinfo">${o.label}</span><div class="${key === "style" ? "seg" : "swatches"}">` +
       o.items.map(v => key === "style" ? `<button data-k="${key}" data-v="${v}" aria-pressed="${look[key] === v}">${o.names[v]}</button>`
         : key === "kit" ? `<button class="sw kit" data-k="${key}" data-v="${v}" aria-pressed="${look[key] === v}" aria-label="${v}" style="background:linear-gradient(${KITS[v].shirt} 0 55%, ${KITS[v].shorts} 55%)"></button>`
@@ -2193,7 +2362,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     document.querySelectorAll("#lookOpts button").forEach(b => b.addEventListener("click", () => { look[b.dataset.k] = b.dataset.v; saveLook(); renderLook(); }));
   }
   function saveLook() { applyLook(); try { localStorage.setItem("brazuca-look", JSON.stringify(look)); } catch (e) {} }
-  let lookPose = {};
+  let lookPose = {}, previewT0 = 0;
   function drawLookPreview() {
     if ($("custom").hidden) return;
     const c = $("lookPreview"), r = c.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
@@ -2203,18 +2372,28 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     const s = c.height / 76, X = c.width / 2, Y = c.height * 0.93;
     ctx.fillStyle = "rgba(10,5,25,0.35)"; ctx.beginPath(); ctx.ellipse(X, Y, 12 * s, 2.5 * s, 0, 0, 7); ctx.fill();
     if (charStyle === "classic") drawGuyC(X, Y, s, 1, { hipF: 0.1, kneeF: 0.12, hipB: -0.1, kneeB: 0.12, shF: 0.15, elF: 0.4, shB: -0.15, elB: 0.4, lean: 0.03, bob: 0 }, KITC_PLAYER);
-    else drawHumanoid(X, Y, s, 1, blendPose(lookPose, poseIdle(time, 0), 1), KIT_PLAYER, true);
+    else {
+      const cq = craque(), t = (time - previewT0) % 6, party = t > 2.5 && t < 5.2;
+      KIT_PLAYER.expr = party ? "happy" : "neutral"; KIT_PLAYER.blink = time % 3.7 < 0.13;
+      blendPose(lookPose, party ? celebPose(cq.celeb, t) : poseIdle(time, 0), 0.35);
+      ctx.translate(X, Y); ctx.scale(cq.w, cq.h); ctx.translate(-X, -Y);
+      drawHumanoid(X, Y, s, 1, lookPose, KIT_PLAYER, true);
+    }
     ctx = saved;
   }
   $("bLook").addEventListener("click", () => { renderLook(); $("custom").hidden = false; });
   $("bLookOk").addEventListener("click", () => { $("custom").hidden = true; });
-  $("bLookReset").addEventListener("click", () => { look = { ...LOOK_DEFAULT }; saveLook(); renderLook(); });
+  $("bLookReset").addEventListener("click", () => { look = { ...LOOK_DEFAULT, ...craque().look }; saveLook(); renderLook(); });
   function startLevel(w, i) { loadLevel(w, i); $("menu").hidden = true; $("win").hidden = true; mode = "play"; showIntro(); }
   function showWin() {
     const n = starsFor(kicks, L.par), key = bestKey(worldIdx, levelIdx);
+    const before = CRAQUES.filter(c => isUnlocked(c)).map(c => c.id);
     if (!best[key] || kicks < best[key]) { best[key] = kicks; saveBest(); }
+    const fresh = CRAQUES.filter(c => isUnlocked(c) && !before.includes(c.id));
     $("winStars").innerHTML = starHtml(n);
     $("winText").textContent = `${kicks} ${kicks === 1 ? "chute" : "chutes"} · par ${L.par}`;
+    $("winNew").hidden = !fresh.length;
+    if (fresh.length) $("winNew").textContent = `Novo craque liberado: ${fresh.map(c => c.name).join(" e ")}! Escolha em Personalizar.`;
     const last = levelIdx === world().levels.length - 1, lastWorld = worldIdx === WORLDS.length - 1;
     $("bNext").textContent = !last ? "Próxima fase" : !lastWorld ? `Mundo ${worldIdx + 2}` : "Voltar ao menu";
     $("win").hidden = false;
