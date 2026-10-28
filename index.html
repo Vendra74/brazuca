@@ -518,9 +518,298 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       "###############^^###################################^^^^################"] }
 
   ];
+  const LEVELS3 = [
+    { name: "Primeiro salto", par: 2, hint: "Agora os quadros também ficam embaixo. Leve a bola e pule no buraco: tem onde cair lá embaixo.", map: [
+      "################################################",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#.P.B..................#.......................#",
+      "###############..###############################",
+      "###############..###############################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "####################...........................#",
+      "#############..................................#",
+      "#############..................................#",
+      "#############.......####......................G#",
+      "#############.....................##..........G#",
+      "#############.....................##..........G#",
+      "################################################",
+      "################################################"] },
+    { name: "O toldo", par: 3, hint: "Lá embaixo é alto demais, mas o toldo amortece a queda.", map: [
+      "################################################",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#......................#.......................#",
+      "#.P.B..................#.......................#",
+      "##################..############################",
+      "##################..############################",
+      "#..............................................#",
+      "#############..................................#",
+      "#############..................................#",
+      "#############..................................#",
+      "#############..................................#",
+      "#############..................................#",
+      "#############..................................#",
+      "#############.................................G#",
+      "#############...............##................G#",
+      "#############...AAAAAA......##................G#",
+      "################################################",
+      "################################################"] },
+    { name: "Dois buracos", par: 3, hint: "Um dos buracos tem toldo embaixo. O outro, não. Esquerda ou direita?", map: [
+      "################################################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#...............P.B............................#",
+      "######..########################..##############",
+      "######..########################..##############",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#.............................................G#",
+      "#.....................##..............##......G#",
+      "#...AAAAAA............##..............##......G#",
+      "################################################",
+      "################################################"] },
+    { name: "Gol de cima", par: 1, hint: "O gol está no andar de baixo, bem embaixo do buraco. Um toquinho na medida resolve.", map: [
+      "########################",
+      "#..................#####",
+      "#..................#####",
+      "#..................#####",
+      "#..................#####",
+      "#..................#####",
+      "#..................#####",
+      "#..................#####",
+      "#..................#####",
+      "#.P.B..............#####",
+      "###############....#####",
+      "###############....#####",
+      "#......................#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########.............G#",
+      "#########.............G#",
+      "#########....AAA......G#",
+      "########################",
+      "########################"] },
+    { name: "Cachorro no porão", par: 3, hint: "Depois do salto, um vira-lata guarda o caminho. Passe a bola por cima dele.", map: [
+      "################################################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#.........##...................................#",
+      "#.P.B.....##...................................#",
+      "####################..##########################",
+      "####################..##########################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "################..#######......................#",
+      "################...............................#",
+      "################...............................#",
+      "################.........###..................G#",
+      "################.........###..................G#",
+      "################.........###........V.........G#",
+      "################################################",
+      "################################################"] },
+    { name: "Três andares", par: 2, hint: "Três andares de queda. A tábua podre não segura ninguém por muito tempo.", map: [
+      "########################",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#.P.B..................#",
+      "##################..####",
+      "##################..####",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "#......................#",
+      "###############CCCCCCCC#",
+      "###############........#",
+      "###############........#",
+      "###############........#",
+      "###############........#",
+      "###############........#",
+      "###############........#",
+      "###############........#",
+      "#......................#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########..............#",
+      "#########.............G#",
+      "#########.............G#",
+      "#########.....AAAAAAAAG#",
+      "########################",
+      "########################"] },
+    { name: "Placa lá em cima", par: 2, holdBonus: 2.5, hint: "A placa de cima abre um portão lá de baixo. Pise, pule e corra.", map: [
+      "################################################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#.P.B........Q.................................#",
+      "#################..#############################",
+      "#################..#############################",
+      "#..............................................#",
+      "###############........E.......................#",
+      "###############........E.......................#",
+      "###############........E.......................#",
+      "###############........E.......................#",
+      "###############........E.......................#",
+      "###############........E.......................#",
+      "###############........E......................G#",
+      "###############........E..........##..........G#",
+      "###############.AAAAA..E..........##..........G#",
+      "################################################",
+      "################################################"] },
+    { name: "Goleiro na chuva", par: 3, hint: "Pule os vergalhões, desça pelo buraco e encare o goleiro lá embaixo.", map: [
+      "################################################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#.P.B..........................................#",
+      "##########..##################..################",
+      "##########^^##################..################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "###################################............#",
+      "###########################....................#",
+      "###########################....................#",
+      "###########################........##.......K.G#",
+      "###########################........##.........G#",
+      "###########################........##.........G#",
+      "################################################",
+      "################################################"] },
+    { name: "Escadão", par: 4, hint: "Portão automático, zagueiro e uma tábua podre no último andar. Desça com calma.", map: [
+      "################################################",
+      "#...........J..................................#",
+      "#...........J..................................#",
+      "#...........J..................................#",
+      "#...........J..................................#",
+      "#...........J..................................#",
+      "#...........J..................................#",
+      "#...........J..................................#",
+      "#...........J..................................#",
+      "#.P.B.......J..................................#",
+      "####################..##########################",
+      "####################..##########################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "##########################.....................#",
+      "##################.............................#",
+      "##################.............................#",
+      "##################........##...................#",
+      "##################........##...................#",
+      "##################........##......Z............#",
+      "########################################..######",
+      "########################################..######",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "####################################.CCCCCCCC..#",
+      "####################################...........#",
+      "####################################..........G#",
+      "####################################..........G#",
+      "####################################..........G#",
+      "####################################AAAAAAAAAAA#",
+      "################################################",
+      "################################################"] },
+    { name: "Final da ladeira", par: 5, hint: "Alvo, cachorro, toldo e um portão que só abre com a placa. O gol fica no fundo do morro.", map: [
+      "################################################",
+      "#..............#....D..........................#",
+      "#..............#....D..........................#",
+      "#..............#....D..........................#",
+      "#..............#....D..........................#",
+      "#..............S....D..........................#",
+      "#...................D..........................#",
+      "#...................D..........................#",
+      "#...................D..........................#",
+      "#.P.B...............D..........................#",
+      "##############################..################",
+      "##############################..################",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#..............................................#",
+      "#...........................####################",
+      "#...................................############",
+      "#...................................############",
+      "#.......................####........############",
+      "#.......................####........############",
+      "#.............V.........####........############",
+      "###..###########################################",
+      "###..###########################################",
+      "#..............................................#",
+      "#.....................................E........#",
+      "#.....................................E........#",
+      "#.....................................E........#",
+      "#.....................................E........#",
+      "#.....................................E........#",
+      "#.....................................E........#",
+      "#.....................................E.......G#",
+      "#.....................................E.......G#",
+      "#AAAAAAAA.....................Q.......E.......G#",
+      "################################################",
+      "################################################"] },
+  ];
   const WORLDS = [
     { name: "Várzea", theme: "dusk", rooms: false, levels: LEVELS1 },
     { name: "Morro", theme: "night", rooms: true, levels: LEVELS2 },
+    { name: "Ladeira", theme: "rain", rooms: true, chain: true, fall: 6.6, levels: LEVELS3 },
   ];
   const MODES = {
     normal: { label: "Normal", info: "A mira mostra a curva, mas não mostra até onde a força leva a bola. Rivais mais rápidos e portões que fecham mais cedo.", preview: 0.28, enemy: 1.3, hold: 3.5 },
@@ -528,7 +817,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   };
 
   // ---------- Constantes (em blocos) ----------
-  const ROWS = 12, VIEW_ROWS = 13.4, ROOM_W = 24, G_PLAYER = 40, RUN = 5, JUMP_V = 10.5, MAX_FALL = 4.6, BOUNCE_V = 17;
+  let ROWS = 12; const ROOM_H = 12, VIEW_ROWS = 13.4, ROOM_W = 24, G_PLAYER = 40, RUN = 5, JUMP_V = 10.5, MAX_FALL = 4.6, BOUNCE_V = 17;
   const G_BALL = 22, BALL_R = 0.24, FLIGHT_SPEED = 16, MAX_REACH = 18, CLIMB_TIME = 0.75;
 
   // ---------- DOM / tela ----------
@@ -575,14 +864,14 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   const MODE = () => MODES[gameMode];
 
   // ---------- Estado ----------
-  let L, grid = null, cols, worldIdx = 0, levelIdx = 0, player, ball, keeper, defenders, platforms, goal, gate, pgate, agates, gateCols, plates, crumbles, kicks, camX = 0, mode = "menu";
+  let camY = 0, L, grid = null, cols, worldIdx = 0, levelIdx = 0, player, ball, keeper, defenders, platforms, goal, gate, pgate, agates, gateCols, plates, crumbles, kicks, camX = 0, mode = "menu";
   let aim = null, lastKick = null, particles = [], trail = [], time = 0, shake = 0, slow = 1, netBulge = 0;
 
   function loadLevel(w, i) {
     worldIdx = w; levelIdx = i; L = world().levels[i];
     computeScale(); buildTheme();
-    grid = L.map.map(r => r.split("")); cols = grid[0].length;
-    crumbles = {}; gate = { open: false, t: 0 }; pgate = { t: 0, timer: 0 }; agates = {}; gateCols = []; plates = [];
+    grid = L.map.map(r => r.split("")); cols = grid[0].length; ROWS = grid.length;
+    crumbles = {}; awnings = {}; gate = { open: false, t: 0 }; pgate = { t: 0, timer: 0 }; agates = {}; gateCols = []; plates = [];
     keeper = null; defenders = []; platforms = []; particles = []; trail = [];
     let gx0 = 1e9, gy0 = 1e9, gx1 = -1, gy1 = -1, px = 2, py = 10, bx = 4, by = 10;
     const kSpots = [], zSpots = [];
@@ -629,7 +918,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     ball = { x: bx, y: by, vx: 0, vy: 0, state: "free", rot: 0, grounded: true, noPick: 0, path: null };
     lastKick = { x: bx, y: by };
     kicks = 0; aim = null; shake = 0; slow = 1; netBulge = 0;
-    camX = camTarget();
+    camX = camTarget(); camY = camYTarget();
     $("lvlName").textContent = `${worldIdx + 1}-${i + 1}. ${L.name}`; $("par").textContent = L.par; updateKicks();
     $("modeChip").textContent = MODE().label;
     showAim(false);
@@ -649,6 +938,9 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     if (world().rooms) return roomOf(fx) * ROOM_W - (viewW - ROOM_W) / 2;
     return clamp(fx - viewW / 2, 0, Math.max(0, cols - viewW));
   }
+  // quadros empilhados (Mundo 3): a câmera troca de andar de uma vez, como no Prince
+  const roomRowOf = y => clamp(Math.floor(y / ROOM_H), 0, Math.max(0, Math.ceil(ROWS / ROOM_H) - 1));
+  function camYTarget() { return roomRowOf(player.y - player.h / 2) * ROOM_H; }
   // intervalo visível do quadro atual (só no modo quadros)
   function visibleRange(cx) { if (!world().rooms) return [cx, cx + viewW]; const x0 = cx + (viewW - ROOM_W) / 2; return [x0, x0 + ROOM_W]; }
 
@@ -656,7 +948,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   function tile(c, r) { if (c < 0 || c >= cols || r < 0) return "#"; if (r >= ROWS) return "."; return grid[r][c]; }
   function solid(c, r) {
     const t = tile(c, r);
-    if (t === "#" || t === "S" || t === "s" || t === "T") return true;
+    if (t === "#" || t === "S" || t === "s" || t === "T" || t === "A") return true;
     if (t === "C") return !crumbles[r + "," + c].gone;
     if (t === "D") return gate.t < 0.6;
     if (t === "E") return pgate.t < 0.6;
@@ -718,9 +1010,9 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     const gc = { x: goal.x0 + 0.6, y: (goal.y0 + goal.y1) / 2 };
     let p2;
     const dg = Math.hypot(gc.x - p0.x, gc.y - p0.y);
-    if (dg < 15 && Math.sign(gc.x - p0.x) === player.facing && gc.x >= v0 && gc.x <= v1) p2 = gc;
+    if (dg < 15 && Math.sign(gc.x - p0.x) === player.facing && gc.x >= v0 && gc.x <= v1 && roomRowOf(gc.y) === roomRowOf(p0.y)) p2 = gc;
     else p2 = { x: clamp(p0.x + player.facing * 8, v0 + 0.5, v1 - 0.5), y: p0.y - 0.2 };
-    aim = { p0, p2, h: { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 - 2.5 }, power: +$("power").value / 100, drag: null, camX };
+    aim = { p0, p2, h: { x: (p0.x + p2.x) / 2, y: (p0.y + p2.y) / 2 - 2.5 }, power: +$("power").value / 100, drag: null, camX, camY };
     mode = "aim"; showAim(true); haptic(10);
   }
   function cancelAim() { charging = false; aim = null; mode = "play"; showAim(false); }
@@ -771,7 +1063,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, tx: (b.x - a.x) / seg, ty: (b.y - a.y) / seg };
   }
 
-  function toWorld(e) { const cx = mode === "aim" ? aim.camX : camX; return { x: cx + e.clientX / S, y: e.clientY / S }; }
+  function toWorld(e) { const cx = mode === "aim" ? aim.camX : camX, cy = mode === "aim" ? aim.camY : camY; return { x: cx + e.clientX / S, y: cy + e.clientY / S }; }
   cv.addEventListener("pointerdown", e => {
     if (mode !== "aim") return;
     e.preventDefault();
@@ -786,7 +1078,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   cv.addEventListener("pointerup", () => { if (aim) aim.drag = null; });
   function moveHandle(w) {
     const [v0, v1] = visibleRange(aim.camX);
-    w.x = clamp(w.x, Math.max(0.3, v0 + 0.2), Math.min(cols - 0.3, v1 - 0.2)); w.y = clamp(w.y, 0.3, ROWS - 0.3);
+    w.x = clamp(w.x, Math.max(0.3, v0 + 0.2), Math.min(cols - 0.3, v1 - 0.2)); w.y = clamp(w.y, aim.camY + 0.3, Math.min(ROWS, aim.camY + ROOM_H) - 0.3);
     if (aim.drag === "e") {
       const off = { x: aim.h.x - (aim.p0.x + aim.p2.x) / 2, y: aim.h.y - (aim.p0.y + aim.p2.y) / 2 };
       aim.p2 = w;
@@ -885,7 +1177,8 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       p.fallFrom = Math.min(p.fallFrom, p.y);
     } else {
       if (!wasGround) {
-        if (p.y - p.fallFrom > MAX_FALL) { die("Queda muito alta!"); return; }
+        if (p.y - p.fallFrom > (world().fall || MAX_FALL) && !underFeet("A")) { die("Queda muito alta!"); return; }
+        if (underFeet("A") && vyBefore > 9) { p.land = 0.25; haptic(15); awningHit(p.x, p.y); }
         if (vyBefore > 9) { dust(p.x, p.y, 5); p.land = 0.18; }
         else p.land = 0.08;
       }
@@ -934,7 +1227,10 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   function ballHitsBar(x, y) { return x + BALL_R > goal.x0 - 0.1 && x - BALL_R < goal.x0 + 0.25 && y + BALL_R > goal.y0 - 0.15 && y - BALL_R < goal.y0 + 0.05; }
   function ballSolid(x, y) {
     const h = rectSolid(x - BALL_R, y - BALL_R, x + BALL_R, y + BALL_R);
-    if (h && h.c !== undefined && tile(h.c, h.r) === "S") hitSwitch(h);
+    if (h && h.c !== undefined) {
+      // o alvo pode estar colado num bloco: confere todas as casas que a bola encosta
+      for (let r = Math.floor(y - BALL_R); r <= Math.floor(y + BALL_R); r++) for (let c = Math.floor(x - BALL_R); c <= Math.floor(x + BALL_R); c++) if (tile(c, r) === "S") hitSwitch({ c, r });
+    }
     return h || (ballHitsBar(x, y) ? { bar: true } : null);
   }
   function hitSwitch(h) {
@@ -1008,6 +1304,8 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
         const ny = ball.y + ball.vy * h;
         const hy = ballSolid(ball.x, ny);
         if (hy || ballHitsBody(ball.x, ny)) {
+          // o toldo segura a bola também (não quica para longe)
+          if (ball.vy > 0 && hy && hy.c !== undefined && tile(hy.c, hy.r) === "A") { ball.vy = 0; ball.vx *= 0.3; ball.grounded = true; if (!awnings[hy.r + "," + hy.c]) awnings[hy.r + "," + hy.c] = 0.25; continue; }
           if (ball.vy > 0 && hy && hy.c !== undefined && tile(hy.c, hy.r) === "T") { ball.vy = -Math.max(ball.vy * 0.85, 12); bounceFx(ball.x, ball.y + BALL_R); continue; }
           if (ball.vy > 0) { ball.grounded = true; ball.vx *= Math.exp(-2.8 * h); }
           if (ball.vy > 6) dust(ball.x, ball.y + BALL_R, 2);
@@ -1049,6 +1347,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
 
   function updateWorld(dt) {
     const sp = MODE().enemy;
+    for (const k in awnings) { awnings[k] -= dt; if (awnings[k] <= 0) delete awnings[k]; }
     if (keeper) {
       keeper.t += dt * sp; keeper.dive = Math.max(0, keeper.dive - dt);
       keeper.y = keeper.cy + Math.sin(keeper.t * 1.9) * keeper.amp;
@@ -1083,7 +1382,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       if (now && !pl.down) { haptic(25); if (pgate.t < 0.1) toast("Portão abrindo!", 1); }
       pl.down = now; pressed = pressed || now;
     }
-    if (pressed) pgate.timer = MODE().hold; else pgate.timer = Math.max(0, pgate.timer - dt);
+    if (pressed) pgate.timer = MODE().hold + (L.holdBonus || 0); else pgate.timer = Math.max(0, pgate.timer - dt);
     pgate.t = clamp(pgate.t + (pgate.timer > 0 ? dt / 0.35 : -dt / 1.2), 0, 1);
     for (const c in agates) {
       const a = agates[c], ph = (time + a.off) % 4.4, open = ph < 2.0;
@@ -1097,6 +1396,8 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
         cr.t -= dt;
         if (cr.t <= 0) {
           cr.gone = true; const [r, c] = k.split(",").map(Number);
+          // no Mundo 3 a tábua desaba inteira, em sequência
+          if (world().chain) for (const d of [-1, 1]) { const n = crumbles[r + "," + (c + d)]; if (n && n.t < 0 && !n.gone) n.t = 0.12; }
           for (let i = 0; i < 7; i++) particles.push({ x: c + Math.random(), y: r + Math.random() * 0.3, vx: (Math.random() - 0.5) * 2, vy: Math.random() * 2, t: 1.1, col: i % 2 ? "#8a5a33" : "#b07a46", sq: true, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8 });
         }
       }
@@ -1109,6 +1410,8 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     netBulge = Math.max(0, netBulge - dt * 0.8);
   }
   function dust(x, y, n) { for (let i = 0; i < n; i++) particles.push({ x: x + (Math.random() - 0.5) * 0.4, y, vx: (Math.random() - 0.5) * 2.5, vy: -Math.random() * 1.2, t: 0.5 + Math.random() * 0.3, col: "rgba(214,176,132,0.7)", dust: true, r: 0.08 + Math.random() * 0.1 }); }
+  function awningHit(x, y) { const k = Math.floor(y + 0.02) + "," + Math.floor(x); awnings[k] = 0.35; dust(x, y, 4); }
+  let awnings = {};
   function bounceFx(x, y) { for (let i = 0; i < 6; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 3, t: 0.4, col: "rgba(255,255,255,0.7)", dust: true, r: 0.06 }); }
 
   // ---------- Arte pré-renderizada ----------
@@ -1119,6 +1422,9 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     night: { sky: ["#070a22", "#111a44", "#1f2a5c", "#33306a", "#4b3a6e"], orb: "#f4efd8", orbGlow: "rgba(220,225,255,0.35)", orbX: 0.22, orbY: 0.2, orbR: 0.06, stars: 160,
       hills: [{ pal: ["#3a3f66", "#4a4470", "#36506a", "#584468", "#2f3a5c"], haze: "rgba(30,36,80,0.45)", base: 0.5, amp: 0.16, lit: 0.85 }, { pal: ["#24203f", "#2e2648", "#1f2a42", "#3a2a48", "#1c1d38"], haze: "rgba(10,10,30,0.35)", base: 0.64, amp: 0.1, lit: 0.85 }],
       tint: "rgba(20,24,70,0.2)", fog: "rgba(25,25,70,0.35)", vig: "rgba(5,5,20,0.6)", warm: "rgba(255,190,110,0.05)", ground: "#2a2630" },
+    rain: { sky: ["#0d1a22", "#1a2c36", "#2a3e47", "#3b4f55", "#4e5f60"], orb: "#9fb4b8", orbGlow: "rgba(170,200,210,0.18)", orbX: 0.8, orbY: 0.16, orbR: 0.04, stars: 0,
+      hills: [{ pal: ["#2f4a52", "#3a4e4a", "#34505e", "#475a55", "#2c4250"], haze: "rgba(40,64,72,0.55)", base: 0.46, amp: 0.2, lit: 0.55 }, { pal: ["#1c2c33", "#24343a", "#1a2a30", "#2a3a3c", "#18262c"], haze: "rgba(12,22,28,0.4)", base: 0.6, amp: 0.13, lit: 0.55 }],
+      tint: "rgba(20,50,60,0.22)", fog: "rgba(30,55,62,0.45)", vig: "rgba(4,12,16,0.62)", warm: "rgba(150,200,210,0.05)", ground: "#222a2c" },
   };
   const theme = () => THEMES[world().theme];
   function buildTheme(force) {
@@ -1141,8 +1447,9 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     c.fillStyle = glow; c.fillRect(0, 0, skyCv.width, skyCv.height);
     c.fillStyle = T.orb; c.beginPath(); c.arc(sx, sy, sr, 0, 7); c.fill();
     if (world().theme === "night") { c.fillStyle = "rgba(180,180,200,0.35)"; [[-0.3, -0.2, 0.22], [0.25, 0.3, 0.16], [0.1, -0.4, 0.1]].forEach(([dx, dy, rr]) => { c.beginPath(); c.arc(sx + dx * sr, sy + dy * sr, rr * sr, 0, 7); c.fill(); }); }
-    c.fillStyle = world().theme === "night" ? "rgba(120,130,200,0.12)" : "rgba(255,190,170,0.18)";
-    for (let i = 0; i < 6; i++) { const y = skyCv.height * (0.32 + R() * 0.25), x = R() * skyCv.width; c.beginPath(); c.ellipse(x, y, skyCv.width * (0.08 + R() * 0.12), skyCv.height * 0.012, 0, 0, 7); c.fill(); }
+    const rain = world().theme === "rain";
+    c.fillStyle = rain ? "rgba(140,165,170,0.16)" : world().theme === "night" ? "rgba(120,130,200,0.12)" : "rgba(255,190,170,0.18)";
+    for (let i = 0; i < (rain ? 26 : 6); i++) { const y = skyCv.height * (0.32 + R() * 0.25), x = R() * skyCv.width; c.beginPath(); c.ellipse(x, y, skyCv.width * (0.08 + R() * 0.12), skyCv.height * 0.012, 0, 0, 7); c.fill(); }
   }
   function drawHill(c, w, h, baseY, amp, R, palette, haze, scale, lit) {
     const pts = []; for (let x = 0; x <= w; x += 20) pts.push([x, baseY - amp * (0.55 + 0.45 * Math.sin(x / w * Math.PI * 2 + 1.3)) - amp * 0.2 * Math.sin(x / w * Math.PI * 6)]);
@@ -1188,20 +1495,20 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   function buildLevelCanvas() {
     TS = Math.round(Math.min(S * DPR, 72));
     levelCv = mkCanvas(cols * TS, ROWS * TS);
-    const c = levelCv.getContext("2d"), T = TS, R = rng(worldIdx * 1000 + levelIdx * 97 + 3), night = world().theme === "night";
+    const c = levelCv.getContext("2d"), T = TS, R = rng(worldIdx * 1000 + levelIdx * 97 + 3), night = world().theme !== "dusk";
     const isS = (cc, rr) => tile(cc, rr) === "#";
     for (let r = 0; r < ROWS; r++) for (let col = 0; col < cols; col++) {
       const t = grid[r][col], X = col * T, Y = r * T;
       if (t === "#") {
-        const earth = r >= 10;
+        const earth = r % ROOM_H >= 10;
         if (earth && !night) {
           const g = c.createLinearGradient(0, Y, 0, Y + T);
-          g.addColorStop(0, r === 10 ? "#8a5232" : "#5d3722"); g.addColorStop(1, r === 10 ? "#6e3f27" : "#45291a");
+          g.addColorStop(0, r % ROOM_H === 10 ? "#8a5232" : "#5d3722"); g.addColorStop(1, r % ROOM_H === 10 ? "#6e3f27" : "#45291a");
           c.fillStyle = g; c.fillRect(X, Y, T + 1, T + 1);
           for (let i = 0; i < 5; i++) { c.fillStyle = R() < 0.5 ? "rgba(255,220,180,0.12)" : "rgba(0,0,0,0.15)"; c.beginPath(); c.ellipse(X + R() * T, Y + R() * T, T * (0.03 + R() * 0.05), T * (0.02 + R() * 0.03), 0, 0, 7); c.fill(); }
         } else if (earth && night) {
           // calçada de cimento rachado
-          c.fillStyle = r === 10 ? "#5b5660" : "#3a3540"; c.fillRect(X, Y, T + 1, T + 1);
+          c.fillStyle = r % ROOM_H === 10 ? "#5b5660" : "#3a3540"; c.fillRect(X, Y, T + 1, T + 1);
           c.strokeStyle = "rgba(0,0,0,0.3)"; c.lineWidth = Math.max(1, T * 0.025); c.beginPath();
           c.moveTo(X + T * R(), Y); c.lineTo(X + T * R(), Y + T * 0.5); c.lineTo(X + T * R(), Y + T); c.stroke();
           c.fillStyle = "rgba(255,255,255,0.05)"; c.fillRect(X, Y, T, T * 0.08);
@@ -1279,7 +1586,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   const kites = [{ x: 0.2, y: 0.18, c: "#e8413b", p: 0 }, { x: 0.55, y: 0.12, c: "#2a8de0", p: 2 }, { x: 0.85, y: 0.22, c: "#f2c32a", p: 4 }];
   const FLAGS = ["#e8413b", "#f2c32a", "#2a8de0", "#1f9d55", "#fbf3e4", "#d1495b"];
   function drawBackground(cx) {
-    const T = theme(), night = world().theme === "night";
+    const T = theme(), night = world().theme !== "dusk", flags = world().theme === "night";
     ctx.drawImage(skyCv, 0, 0, W, H);
     const fw = farCv[0].width / DPR;
     farCv.forEach((fc, i) => {
@@ -1287,11 +1594,11 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       ctx.drawImage(fc, ox, 0, fw, H); ctx.drawImage(fc, ox + fw, 0, fw, H);
       if (i === 0) { ctx.fillStyle = T.tint; ctx.fillRect(0, 0, W, H); }
     });
-    const fog = ctx.createLinearGradient(0, H * 0.35, 0, ROWS * S);
+    const fog = ctx.createLinearGradient(0, H * 0.35, 0, ROOM_H * S);
     fog.addColorStop(0, "rgba(0,0,0,0)"); fog.addColorStop(1, T.fog);
     ctx.fillStyle = fog; ctx.fillRect(0, 0, W, H);
     // postes e fios (no morro, com bandeirinhas de festa junina)
-    const pk = 0.45, spacing = 9 * S, base = ROWS * S;
+    const pk = 0.45, spacing = 9 * S, base = ROOM_H * S;
     const off = -((cx * S * pk) % spacing + spacing) % spacing;
     ctx.fillStyle = night ? "rgba(8,8,24,0.9)" : "rgba(30,15,35,0.9)"; ctx.strokeStyle = ctx.fillStyle;
     for (let x = off - spacing; x < W + spacing; x += spacing) {
@@ -1303,7 +1610,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
         ctx.fillStyle = "rgba(255,220,150,0.9)"; ctx.beginPath(); ctx.arc(x, base * 0.19, S * 0.1, 0, 7); ctx.fill();
         const lg = ctx.createRadialGradient(x, base * 0.19, 1, x, base * 0.19, S * 2.2); lg.addColorStop(0, "rgba(255,210,140,0.3)"); lg.addColorStop(1, "rgba(255,210,140,0)");
         ctx.fillStyle = lg; ctx.fillRect(x - S * 2.2, base * 0.19 - S * 2.2, S * 4.4, S * 4.4);
-        const n = 14;
+        const n = flags ? 14 : 0;
         for (let i = 1; i < n; i++) {
           const t = i / n, fx = x + spacing * t, fy = base * 0.2 + S * 0.62 + 4 * S * 1.1 * t * (1 - t) * 0.5 - S * 0.6 + S * 0.62 * 0;
           const yy = base * 0.2 + 2 * t * (1 - t) * S * 1.1 + S * 0.05, sw = Math.sin(time * 2 + i) * S * 0.03;
@@ -1325,6 +1632,19 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     }
   }
 
+  // chuva e relâmpago do Mundo 3
+  let flash = 0, nextFlash = 6;
+  function drawRain() {
+    nextFlash -= 1 / 60; if (nextFlash <= 0) { flash = 0.35; nextFlash = 7 + Math.random() * 9; }
+    ctx.strokeStyle = "rgba(190,215,225,0.32)"; ctx.lineWidth = Math.max(1, S * 0.03); ctx.beginPath();
+    const n = 90, len = S * 0.55, sp = H * 1.6;
+    for (let i = 0; i < n; i++) {
+      const x0 = ((i * 97.13) % 1) * (W + S * 3), y0 = ((i * 0.6180339 + time * (1.3 + (i % 5) * 0.08)) % 1) * sp - S;
+      const x = (x0 - y0 * 0.18) % (W + S * 3) - S; ctx.moveTo(x, y0); ctx.lineTo(x - len * 0.18, y0 + len);
+    }
+    ctx.stroke();
+    if (flash > 0) { ctx.fillStyle = `rgba(220,235,255,${flash * (0.6 + Math.random() * 0.4)})`; ctx.fillRect(0, 0, W, H); flash -= 1 / 60; }
+  }
   function gateOpenAmount(gc) { return gc.type === "D" ? gate.t : gc.type === "E" ? pgate.t : agates[gc.c].t; }
   function drawDynamicTiles(cx) {
     const c0 = Math.max(0, Math.floor(cx) - 1), c1 = Math.min(cols - 1, Math.ceil(cx + viewW) + 1);
@@ -1343,6 +1663,13 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
         ctx.strokeStyle = "#3a2a20"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X + S * 0.5, Y); ctx.lineTo(X + S * 0.5, Y + S * 0.2); ctx.stroke();
         const R = S * 0.42, cxp = X + S / 2, cyp = Y + S * 0.58 + (on ? Math.sin(time * 6) * S * 0.03 : 0);
         [[1, on ? "#1f9d55" : "#e2412f"], [0.7, "#fbf3e4"], [0.4, on ? "#1f9d55" : "#e2412f"], [0.12, "#fbf3e4"]].forEach(([k, col]) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cxp, cyp, R * k, 0, 7); ctx.fill(); });
+      } else if (t === "A") {
+        // toldo listrado: amortece a queda
+        const k = awnings[r + "," + c] || 0, sq = Math.sin(k / 0.35 * Math.PI) * S * 0.12;
+        ctx.fillStyle = "#3a3540"; ctx.fillRect(X + S * 0.04, Y + S * 0.3, S * 0.07, S * 0.7); ctx.fillRect(X + S * 0.89, Y + S * 0.3, S * 0.07, S * 0.7);
+        for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? "#fbf3e4" : "#d1495b"; ctx.fillRect(X + i * S / 4, Y + sq, S / 4 + 0.5, S * 0.32 - sq * 0.5); }
+        ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(X, Y + S * 0.32 + sq * 0.5, S, S * 0.05);
+        for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? "#fbf3e4" : "#d1495b"; ctx.beginPath(); ctx.arc(X + (i + 0.5) * S / 4, Y + S * 0.32 + sq * 0.5, S / 8, 0, Math.PI); ctx.fill(); }
       } else if (t === "q") {
         const pl = plates.find(p => p.c === c && p.r === r), dn = pl && pl.down;
         ctx.fillStyle = "#3a3540"; ctx.fillRect(X + S * 0.08, Y + S * 0.86, S * 0.84, S * 0.14);
@@ -1737,7 +2064,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   function drawAim(cx) {
     const path = buildPath(aim), reach = aim.power * MAX_REACH, prev = MODE().preview;
     const shown = prev >= 1 ? reach : Math.min(reach, path.len) * prev;
-    const sx = x => (x - cx) * S, sy = y => y * S;
+    const sx = x => (x - cx) * S, sy = y => (y - aim.camY) * S;
     ctx.save();
     ctx.lineWidth = Math.max(3, S * 0.09); ctx.lineCap = "round"; ctx.setLineDash([S * 0.25, S * 0.18]);
     ctx.lineDashOffset = -time * S * 1.2;
@@ -1786,8 +2113,12 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     if (xl > 2) ctx.fillRect(xl - 2, 0, 2, H);
     if (xr < W - 2) ctx.fillRect(xr, 0, 2, H);
     // no Kids, uma seta mostra para que lado a bola foi
-    if (gameMode === "kids" && (ball.x < v0 || ball.x > v1) && mode !== "won") {
-      const right = ball.x > v1, ax = right ? xr - S * 0.5 : xl + S * 0.5, ay = clamp(ball.y, 2, 9.5) * S, a = Math.sin(time * 6) * S * 0.08;
+    const bRow = roomRowOf(ball.y), pRow = camY / ROOM_H;
+    if (gameMode === "kids" && bRow !== pRow && mode !== "won") {
+      const down = bRow > pRow, ax = clamp((ball.x - cx) * S, xl + S, xr - S), ay = down ? ROOM_H * S - S * 0.6 : S * 1.6, a = Math.sin(time * 6) * S * 0.08, d = down ? 1 : -1;
+      ctx.fillStyle = "rgba(255,210,63,0.9)"; ctx.beginPath(); ctx.moveTo(ax, ay + d * (S * 0.3 + a)); ctx.lineTo(ax - S * 0.25, ay - d * S * 0.1); ctx.lineTo(ax + S * 0.25, ay - d * S * 0.1); ctx.fill();
+    } else if (gameMode === "kids" && (ball.x < v0 || ball.x > v1) && mode !== "won") {
+      const right = ball.x > v1, ax = right ? xr - S * 0.5 : xl + S * 0.5, ay = clamp(ball.y - camY, 2, 9.5) * S, a = Math.sin(time * 6) * S * 0.08;
       ctx.fillStyle = "rgba(255,210,63,0.9)"; ctx.beginPath();
       const d = right ? 1 : -1; ctx.moveTo(ax + d * (S * 0.3 + a), ay); ctx.lineTo(ax - d * S * 0.1, ay - S * 0.25); ctx.lineTo(ax - d * S * 0.1, ay + S * 0.25); ctx.fill();
     }
@@ -1800,11 +2131,14 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     drawBackground(cx);
     if (shake > 0) { const m = shake * S * 0.25; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
-    ctx.fillStyle = theme().ground; ctx.fillRect(-20, ROWS * S, W + 40, H - ROWS * S + 20);
+    ctx.fillStyle = theme().ground; ctx.fillRect(-20, ROOM_H * S, W + 40, H - ROOM_H * S + 20);
+    const cy = mode === "aim" && aim ? aim.camY : camY;
+    ctx.translate(0, -cy * S);
     drawGoal(cx, true);
     // recorta a origem dentro do mapa: com origem fora da imagem, o Safari estica o cenário e desalinha os muros
     const lx0 = Math.max(0, cx), lx1 = Math.min(cols, cx + viewW);
-    if (lx1 > lx0) ctx.drawImage(levelCv, lx0 * TS, 0, (lx1 - lx0) * TS, ROWS * TS, (lx0 - cx) * S, 0, (lx1 - lx0) * S, ROWS * S);
+    const ly0 = cy, ly1 = Math.min(ROWS, cy + VIEW_ROWS);
+    if (lx1 > lx0) ctx.drawImage(levelCv, lx0 * TS, ly0 * TS, (lx1 - lx0) * TS, (ly1 - ly0) * TS, (lx0 - cx) * S, ly0 * S, (lx1 - lx0) * S, (ly1 - ly0) * S);
     drawDynamicTiles(cx);
     drawKeeper(cx, dt); drawDefenders(cx, dt); drawPlayer(cx, dt); drawBall(cx);
     drawGoal(cx, false);
@@ -1816,6 +2150,9 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     }
     ctx.globalAlpha = 1;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // o andar de baixo fica escondido até você descer
+    if (world().theme === "rain") drawRain();
+    if (ROWS > ROOM_H) { ctx.fillStyle = theme().ground; ctx.fillRect(-20, ROOM_H * S, W + 40, H - ROOM_H * S + 20); }
     ctx.drawImage(vigCv, 0, 0, W, H);
     drawRoomMask(cx);
     if (mode === "aim" && aim) drawAim(cx);
@@ -1918,6 +2255,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
       }
       const target = world().rooms ? camTarget() : camTarget(ball.state === "flight" ? (player.x + ball.x) / 2 : player.x);
       camX += (target - camX) * Math.min(1, realDt * (world().rooms ? 10 : 6));
+      camY = camYTarget();
     }
     if (toastTimer > 0) { toastTimer -= realDt; if (toastTimer <= 0) $("toast").style.opacity = 0; }
     if (introTimer > 0) { introTimer -= realDt; if (introTimer <= 0) $("intro").style.opacity = 0; }
