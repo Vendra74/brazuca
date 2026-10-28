@@ -4,4 +4,4 @@ Jogo de plataforma para celular no estilo Prince of Persia: o jogador precisa ma
 
 **Jogar:** https://vendra74.github.io/brazuca/ (abra no celular, na horizontal)
 
-Este é um protótipo de jogabilidade. O Mundo 1 (Várzea) tem 10 fases, e o jogo inteiro está em `index.html`.
+Este é um protótipo de jogabilidade com 2 mundos de 10 fases: Várzea, com câmera contínua, e Morro, com câmera quadro a quadro. Tem os modos Normal e Kids, e o jogo inteiro está em `index.html`.
