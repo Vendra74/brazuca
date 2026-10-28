@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Brazuca">
+<meta name="theme-color" content="#1d1838">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} body{margin:0} [hidden]{display:none!important}</style>
 </head>
 <body>
@@ -192,7 +197,7 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
     <div class="row"><span class="modeinfo">Personagem</span><div class="seg" id="charSeg" role="group" aria-label="Personagem"><button id="cNew" aria-pressed="true">Novo</button><button id="cOld" aria-pressed="false">Original</button></div></div>
     <div class="seg worlds" id="worldSeg" role="group" aria-label="Mundo"></div>
     <div class="levels" id="levelList"></div>
-    <div class="row"><button class="btn" id="bFull">Tela cheia</button></div>
+    <div class="row"><button class="btn" id="bFull">Tela cheia</button><span class="modeinfo" id="fullTip" hidden>No iPhone, a tela cheia vem pelo atalho: toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>. Abra o jogo pelo ícone novo.</span></div>
   </div>
 </div>
 
@@ -1779,8 +1784,13 @@ button:focus-visible { outline: 3px solid var(--aim); outline-offset: 2px; }
   $("btnRestart").addEventListener("click", () => { if (mode === "play" || mode === "aim") startLevel(worldIdx, levelIdx); });
   $("btnMenu").addEventListener("click", openMenu);
   function openMenu() { menuWorld = worldIdx; renderMenu(); $("menu").hidden = false; mode = "menu"; showAim(false); }
+  // iPhone não tem tela cheia para páginas: lá o caminho é o atalho na Tela de Início (abre sem barras)
+  const de = document.documentElement, fsReq = de.requestFullscreen || de.webkitRequestFullscreen;
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (standalone) $("bFull").hidden = true;
+  else if (!fsReq) { $("bFull").hidden = true; $("fullTip").hidden = false; }
   $("bFull").addEventListener("click", async () => {
-    try { await document.documentElement.requestFullscreen(); } catch (e) {}
+    try { await fsReq.call(de); } catch (e) {}
     try { await screen.orientation.lock("landscape"); } catch (e) {}
   });
 
